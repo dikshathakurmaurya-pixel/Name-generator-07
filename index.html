@@ -1,1304 +1,566 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CONFIDENCE</title>
 
-<meta name="viewport"
-content="width=device-width,initial-scale=1.0">
-
-<meta name="theme-color"
-content="#050505">
-
-<title>JUMPX - Jump Counter</title>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
 
 <style>
-
 *{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial,Helvetica,sans-serif;
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  font-family:Arial,sans-serif;
 }
 
 body{
-    background:#050505;
-    color:white;
-    min-height:100vh;
+  background:#050505;
+  color:white;
+  min-height:100vh;
+  overflow:hidden;
 }
 
 header{
-    height:65px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:0 18px;
-    border-bottom:1px solid #222;
+  height:70px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:25px;
+  font-weight:900;
+  letter-spacing:4px;
 }
 
-.logo{
-    font-size:25px;
-    font-weight:900;
-    letter-spacing:2px;
+#cameraBox{
+  position:relative;
+  width:94%;
+  height:72vh;
+  margin:auto;
+  border-radius:25px;
+  overflow:hidden;
+  background:#111;
+  border:1px solid #333;
 }
 
-.logo span{
-    color:#00ff88;
+video{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  transform:scaleX(-1);
 }
 
-.status{
-    font-size:11px;
-    color:#777;
-    font-weight:bold;
+canvas{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  pointer-events:none;
 }
 
-.container{
-    width:96%;
-    max-width:700px;
-    margin:auto;
-    padding:10px 0 35px;
+#status{
+  position:absolute;
+  top:15px;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(0,0,0,.7);
+  padding:9px 15px;
+  border-radius:20px;
+  font-size:12px;
+  letter-spacing:1px;
+  z-index:5;
 }
 
-/* BIG CAMERA */
-
-.camera-box{
-    position:relative;
-    width:100%;
-    height:78vh;
-    min-height:500px;
-    max-height:850px;
-    background:#111;
-    border:1px solid #292929;
-    border-radius:16px;
-    overflow:hidden;
-}
-
-#video{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    transform:scaleX(-1);
-}
-
-#canvas{
-    position:absolute;
-    inset:0;
-    width:100%;
-    height:100%;
-    pointer-events:none;
-    transform:scaleX(-1);
-}
-
-.camera-message{
-    position:absolute;
-    inset:0;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    color:#aaa;
-    font-size:15px;
-    padding:20px;
-    pointer-events:none;
-    z-index:3;
-}
-
-.corner{
-    position:absolute;
-    width:30px;
-    height:30px;
-    border-color:#00ff88;
-    border-style:solid;
-    z-index:4;
-}
-
-.c1{
-    top:14px;
-    left:14px;
-    border-width:2px 0 0 2px;
-}
-
-.c2{
-    top:14px;
-    right:14px;
-    border-width:2px 2px 0 0;
-}
-
-.c3{
-    bottom:14px;
-    left:14px;
-    border-width:0 0 2px 2px;
-}
-
-.c4{
-    bottom:14px;
-    right:14px;
-    border-width:0 2px 2px 0;
-}
-
-/* COUNTER */
-
-.counter{
-    text-align:center;
-    padding:20px 0 12px;
-}
-
-.label{
-    color:#777;
-    font-size:12px;
-    letter-spacing:4px;
-    font-weight:bold;
-}
-
-.number{
-    font-size:88px;
-    line-height:1;
-    font-weight:900;
-}
-
-/* GOAL */
-
-.goal-box{
-    background:#101010;
-    border:1px solid #222;
-    border-radius:14px;
-    padding:15px;
-}
-
-.goal-top{
-    display:flex;
-    justify-content:space-between;
-    margin-bottom:10px;
-    font-size:13px;
-}
-
-.goal-top span:first-child{
-    color:#999;
-}
-
-.progress{
-    height:8px;
-    background:#222;
-    border-radius:20px;
-    overflow:hidden;
-}
-
-.progress-bar{
-    height:100%;
-    width:0%;
-    background:#00ff88;
-    transition:.2s;
-}
-
-/* BUTTONS */
-
-.buttons{
-    display:flex;
-    gap:10px;
-    margin-top:14px;
+.controls{
+  position:absolute;
+  bottom:20px;
+  left:0;
+  right:0;
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  z-index:10;
 }
 
 button{
-    border:0;
-    border-radius:12px;
-    padding:17px;
-    font-size:14px;
-    font-weight:900;
-    cursor:pointer;
+  border:0;
+  border-radius:14px;
+  padding:14px 18px;
+  background:#fff;
+  color:#000;
+  font-weight:800;
+  cursor:pointer;
 }
 
-.start{
-    flex:1;
-    background:#00ff88;
-    color:#000;
+#go{
+  background:#111;
+  color:white;
+  border:1px solid #555;
 }
 
-.reset{
-    width:110px;
-    background:#1b1b1b;
-    color:white;
-    border:1px solid #292929;
+#go.active{
+  background:white;
+  color:black;
 }
 
-/* STATS */
-
-.stats{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:10px;
-    margin-top:14px;
+#start{
+  position:fixed;
+  inset:0;
+  background:#050505;
+  z-index:100;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:18px;
 }
 
-.stat{
-    background:#101010;
-    border:1px solid #222;
-    border-radius:13px;
-    padding:15px 5px;
-    text-align:center;
+#start h1{
+  font-size:42px;
+  letter-spacing:7px;
 }
 
-.stat-number{
-    font-size:22px;
-    font-weight:900;
+#start p{
+  color:#aaa;
 }
 
-.stat-label{
-    color:#777;
-    font-size:10px;
-    margin-top:5px;
-    letter-spacing:1px;
+#start button{
+  padding:16px 35px;
+  font-size:16px;
 }
-
-/* INFO */
-
-.info{
-    background:#101010;
-    border:1px solid #222;
-    border-radius:14px;
-    padding:18px;
-    margin-top:14px;
-}
-
-.info h3{
-    font-size:15px;
-    margin-bottom:10px;
-}
-
-.info p{
-    color:#888;
-    font-size:12px;
-    line-height:1.8;
-}
-
-.ready{
-    color:#00ff88;
-    font-weight:bold;
-    margin-top:10px;
-    font-size:12px;
-}
-
-/* MOBILE */
-
-@media(max-width:500px){
-
-    .container{
-        width:98%;
-    }
-
-    .camera-box{
-        height:76vh;
-        min-height:470px;
-    }
-
-    .number{
-        font-size:75px;
-    }
-
-    .buttons{
-        flex-direction:column;
-    }
-
-    .reset{
-        width:100%;
-    }
-
-}
-
 </style>
-
 </head>
 
 <body>
 
-<header>
-
-    <div class="logo">
-        JUMP<span>X</span>
-    </div>
-
-    <div
-        class="status"
-        id="status">
-
-        CAMERA OFF
-
-    </div>
-
-</header>
-
-
-<div class="container">
-
-
-<!-- CAMERA -->
-
-<div class="camera-box">
-
-    <video
-        id="video"
-        autoplay
-        muted
-        playsinline>
-    </video>
-
-    <canvas id="canvas"></canvas>
-
-    <div
-        class="camera-message"
-        id="message">
-
-        Press START CAMERA
-
-    </div>
-
-    <div class="corner c1"></div>
-    <div class="corner c2"></div>
-    <div class="corner c3"></div>
-    <div class="corner c4"></div>
-
+<div id="start">
+  <h1>CONFIDENCE</h1>
+  <p>Face the camera to activate the edit.</p>
+  <button onclick="startApp()">START</button>
 </div>
 
+<header>CONFIDENCE</header>
 
-<!-- COUNTER -->
+<div id="cameraBox">
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="canvas"></canvas>
+  <div id="status">WAITING FOR CAMERA</div>
 
-<div class="counter">
-
-    <div class="label">
-        JUMPS
-    </div>
-
-    <div
-        class="number"
-        id="count">
-
-        0
-
-    </div>
-
+  <div class="controls">
+    <button id="go" onclick="manualTrigger()">GO 💀</button>
+    <button onclick="switchCamera()">FLIP 🔄</button>
+    <button onclick="toggleMusic()">FUNK 🔊</button>
+    <button onclick="capture()">PHOTO 📸</button>
+  </div>
 </div>
-
-
-<!-- GOAL -->
-
-<div class="goal-box">
-
-    <div class="goal-top">
-
-        <span>
-            DAILY GOAL
-        </span>
-
-        <span id="goalText">
-            0 / 50
-        </span>
-
-    </div>
-
-    <div class="progress">
-
-        <div
-            class="progress-bar"
-            id="progress">
-        </div>
-
-    </div>
-
-</div>
-
-
-<!-- BUTTONS -->
-
-<div class="buttons">
-
-    <button
-        class="start"
-        id="startBtn"
-        onclick="startCamera()">
-
-        📷 START CAMERA
-
-    </button>
-
-    <button
-        class="reset"
-        onclick="resetCounter()">
-
-        ↻ RESET
-
-    </button>
-
-</div>
-
-
-<!-- STATS -->
-
-<div class="stats">
-
-    <div class="stat">
-
-        <div
-            class="stat-number"
-            id="best">
-
-            0
-
-        </div>
-
-        <div class="stat-label">
-            BEST
-        </div>
-
-    </div>
-
-
-    <div class="stat">
-
-        <div
-            class="stat-number"
-            id="today">
-
-            0
-
-        </div>
-
-        <div class="stat-label">
-            TODAY
-        </div>
-
-    </div>
-
-
-    <div class="stat">
-
-        <div class="stat-number">
-            50
-        </div>
-
-        <div class="stat-label">
-            GOAL
-        </div>
-
-    </div>
-
-</div>
-
-
-<!-- INFO -->
-
-<div class="info">
-
-    <h3>
-        HOW TO USE
-    </h3>
-
-    <p>
-
-        1. Phone ko stable jagah par rakho.<br>
-
-        2. Full body camera mein visible rakho.<br>
-
-        3. START CAMERA dabao.<br>
-
-        4. 2 seconds seedhe khade raho.<br>
-
-        5. "READY - JUMP NOW" aane ke baad jump karo.
-
-    </p>
-
-    <div class="ready"
-         id="readyText">
-
-        Waiting for camera...
-
-    </div>
-
-</div>
-
-
-</div>
-
-
-<!-- MEDIAPIPE -->
-
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-
 
 <script>
+const video=document.getElementById("video");
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+const statusText=document.getElementById("status");
+const goBtn=document.getElementById("go");
 
-/* =========================
-   ELEMENTS
-========================= */
+let stream=null;
+let front=true;
+let skull=false;
+let music=false;
+let audioCtx=null;
+let lastTrigger=0;
+let manual=false;
 
-const video =
-document.getElementById("video");
+async function startApp(){
+  document.getElementById("start").style.display="none";
 
-const canvas =
-document.getElementById("canvas");
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({
+      video:{
+        facingMode:front ? "user" : "environment",
+        width:{ideal:1280},
+        height:{ideal:720}
+      },
+      audio:false
+    });
 
-const ctx =
-canvas.getContext("2d");
+    video.srcObject=stream;
 
-const countElement =
-document.getElementById("count");
+    video.onloadedmetadata=()=>{
+      canvas.width=video.videoWidth;
+      canvas.height=video.videoHeight;
+    };
 
-const bestElement =
-document.getElementById("best");
+    statusText.innerText="LOOK AT CAMERA 👀";
 
-const todayElement =
-document.getElementById("today");
-
-const progressElement =
-document.getElementById("progress");
-
-const goalText =
-document.getElementById("goalText");
-
-const statusElement =
-document.getElementById("status");
-
-const messageElement =
-document.getElementById("message");
-
-const readyText =
-document.getElementById("readyText");
-
-const startButton =
-document.getElementById("startBtn");
-
-
-/* =========================
-   SETTINGS
-========================= */
-
-const GOAL = 50;
-
-/*
-   Jump sensitivity.
-
-   LOWER = easier detection
-   HIGHER = harder detection
-*/
-
-const JUMP_THRESHOLD = 0.018;
-
-
-/* =========================
-   VARIABLES
-========================= */
-
-let count = 0;
-
-let best =
-Number(
-    localStorage.getItem("jumpBest")
-) || 0;
-
-let stream = null;
-
-let running = false;
-
-let calibrated = false;
-
-let calibrationFrames = 0;
-
-let baselineHip = 0;
-
-let highestHip = 0;
-
-let jumpState = "GROUND";
-
-let lastJumpTime = 0;
-
-
-/* =========================
-   UI
-========================= */
-
-function updateUI(){
-
-    countElement.textContent =
-        count;
-
-    bestElement.textContent =
-        best;
-
-    todayElement.textContent =
-        count;
-
-    goalText.textContent =
-        count + " / " + GOAL;
-
-    const percent =
-        Math.min(
-            count / GOAL * 100,
-            100
-        );
-
-    progressElement.style.width =
-        percent + "%";
+    initFaceMesh();
+  }catch(e){
+    statusText.innerText="CAMERA ACCESS DENIED";
+    alert("Camera permission allow karo. HTTPS ya localhost par app open karo.");
+  }
 }
 
-
-/* =========================
-   ADD JUMP
-========================= */
-
-function addJump(){
-
-    count++;
-
-    if(count > best){
-
-        best = count;
-
-        localStorage.setItem(
-            "jumpBest",
-            best
-        );
-
-    }
-
-    updateUI();
-
-    if(navigator.vibrate){
-
-        navigator.vibrate(60);
-
-    }
-
-}
-
-
-/* =========================
-   RESET
-========================= */
-
-function resetCounter(){
-
-    count = 0;
-
-    calibrated = false;
-
-    calibrationFrames = 0;
-
-    baselineHip = 0;
-
-    highestHip = 0;
-
-    jumpState = "GROUND";
-
-    lastJumpTime = 0;
-
-    messageElement.textContent =
-        "Press START CAMERA";
-
-    readyText.textContent =
-        "Waiting for camera...";
-
-    updateUI();
-
-}
-
-
-/* =========================
-   MEDIAPIPE
-========================= */
-
-const pose =
-new Pose({
-
-    locateFile:function(file){
-
-        return
-        "https://cdn.jsdelivr.net/npm/@mediapipe/pose/" + file;
-
-    }
-
+const faceMesh=new FaceMesh({
+  locateFile:(file)=>{
+    return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+  }
 });
 
-
-pose.setOptions({
-
-    modelComplexity:1,
-
-    smoothLandmarks:true,
-
-    enableSegmentation:false,
-
-    minDetectionConfidence:0.5,
-
-    minTrackingConfidence:0.5
-
+faceMesh.setOptions({
+  maxNumFaces:1,
+  refineLandmarks:true,
+  minDetectionConfidence:.55,
+  minTrackingConfidence:.55
 });
 
+faceMesh.onResults(results=>{
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
-/* =========================
-   POSE RESULTS
-========================= */
+  if(!results.multiFaceLandmarks ||
+     results.multiFaceLandmarks.length===0){
+    statusText.innerText="LOOK AT CAMERA 👀";
+    return;
+  }
 
-pose.onResults(function(results){
+  const lm=results.multiFaceLandmarks[0];
 
-    if(!running)
-        return;
+  const leftEye=lm[159];
+  const rightEye=lm[386];
 
+  /*
+    Simple camera-facing check:
+    both eyes and nose visible = face is looking
+    generally toward camera.
+  */
+  const eyeDistance=Math.abs(rightEye.x-leftEye.x);
 
-    canvas.width =
-        video.videoWidth;
-
-    canvas.height =
-        video.videoHeight;
-
-
-    ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-
-    /* NO BODY */
-
-    if(!results.poseLandmarks){
-
-        messageElement.textContent =
-            "BODY NOT DETECTED";
-
-        readyText.textContent =
-            "Move into camera view";
-
-        return;
-
+  if(eyeDistance>.035){
+    if(!skull && Date.now()-lastTrigger>1500){
+      activateSkull();
     }
-
-
-    /* BODY FOUND */
-
-    messageElement.textContent =
-        "BODY DETECTED";
-
-
-    /* DRAW SKELETON */
-
-    drawConnectors(
-
-        ctx,
-
-        results.poseLandmarks,
-
-        POSE_CONNECTIONS,
-
-        {
-            color:"#00ff88",
-            lineWidth:4
-        }
-
-    );
-
-
-    drawLandmarks(
-
-        ctx,
-
-        results.poseLandmarks,
-
-        {
-            color:"#ffffff",
-            lineWidth:2,
-            radius:4
-        }
-
-    );
-
-
-    /* HIPS */
-
-    const leftHip =
-        results.poseLandmarks[23];
-
-    const rightHip =
-        results.poseLandmarks[24];
-
-
-    if(!leftHip || !rightHip)
-        return;
-
-
-    /*
-       Average hip position
-    */
-
-    const hipY =
-        (
-            leftHip.y +
-            rightHip.y
-        ) / 2;
-
-
-    /* =========================
-       CALIBRATION
-    ========================= */
-
-    if(!calibrated){
-
-        calibrationFrames++;
-
-        /*
-           Slowly calculate
-           standing position
-        */
-
-        baselineHip =
-            (
-                baselineHip *
-                (calibrationFrames - 1)
-                +
-                hipY
-            )
-            /
-            calibrationFrames;
-
-
-        messageElement.textContent =
-            "STAND STILL";
-
-
-        readyText.textContent =
-            "Calibrating... " +
-            Math.min(
-                Math.round(
-                    calibrationFrames / 30 * 100
-                ),
-                100
-            ) +
-            "%";
-
-
-        if(calibrationFrames >= 30){
-
-            calibrated = true;
-
-            highestHip =
-                baselineHip;
-
-            jumpState =
-                "GROUND";
-
-            messageElement.textContent =
-                "READY - JUMP NOW";
-
-            readyText.textContent =
-                "🟢 READY - JUMP NOW";
-
-        }
-
-        return;
-
-    }
-
-
-    /* =========================
-       JUMP DETECTION
-    ========================= */
-
-    const rise =
-        baselineHip - hipY;
-
-
-    /*
-       BODY GOES UP
-    */
-
-    if(
-        jumpState === "GROUND" &&
-        rise > JUMP_THRESHOLD
-    ){
-
-        jumpState =
-            "AIR";
-
-        highestHip =
-            hipY;
-
-        messageElement.textContent =
-            "⬆ IN AIR";
-
-    }
-
-
-    /*
-       While in air,
-       remember highest point
-    */
-
-    if(
-        jumpState === "AIR"
-    ){
-
-        if(
-            hipY < highestHip
-        ){
-
-            highestHip =
-                hipY;
-
-        }
-
-
-        /*
-           Body must come
-           noticeably back down
-        */
-
-        const returned =
-            hipY >
-            baselineHip - 0.006;
-
-
-        if(returned){
-
-            const now =
-                Date.now();
-
-
-            if(
-                now - lastJumpTime >
-                500
-            ){
-
-                addJump();
-
-                lastJumpTime =
-                    now;
-
-                messageElement.textContent =
-                    "🔥 JUMP +1";
-
-            }
-
-
-            jumpState =
-                "GROUND";
-
-        }
-
-    }
-
+  }
+
+  if(skull){
+    drawSkull(lm);
+    statusText.innerText="CONFIDENCE MODE 💀";
+  }
 });
 
-
-/* =========================
-   START CAMERA
-========================= */
-
-async function startCamera(){
-
-    if(running){
-
-        stopCamera();
-
-        return;
-
+async function initFaceMesh(){
+  async function process(){
+    if(video.readyState>=2){
+      await faceMesh.send({image:video});
     }
-
-
-    if(
-        !navigator.mediaDevices ||
-        !navigator.mediaDevices.getUserMedia
-    ){
-
-        alert(
-            "Camera API available nahi hai."
-        );
-
-        return;
-
-    }
-
-
-    try{
-
-        statusElement.textContent =
-            "REQUESTING CAMERA...";
-
-
-        statusElement.style.color =
-            "#00ff88";
-
-
-        messageElement.textContent =
-            "ALLOW CAMERA";
-
-
-        stream =
-            await navigator.mediaDevices.getUserMedia({
-
-                video:{
-                    facingMode:"user",
-
-                    width:{
-                        ideal:1280
-                    },
-
-                    height:{
-                        ideal:720
-                    }
-                },
-
-                audio:false
-
-            });
-
-
-        video.srcObject =
-            stream;
-
-
-        video.muted =
-            true;
-
-
-        video.playsInline =
-            true;
-
-
-        await video.play();
-
-
-        running =
-            true;
-
-
-        calibrated =
-            false;
-
-
-        calibrationFrames =
-            0;
-
-
-        baselineHip =
-            0;
-
-
-        highestHip =
-            0;
-
-
-        jumpState =
-            "GROUND";
-
-
-        startButton.textContent =
-            "⏹ STOP CAMERA";
-
-
-        statusElement.textContent =
-            "CAMERA ON";
-
-
-        readyText.textContent =
-            "Calibrating...";
-
-
-        processCamera();
-
-
-    }
-
-    catch(error){
-
-        console.error(error);
-
-
-        statusElement.textContent =
-            "CAMERA ERROR";
-
-
-        statusElement.style.color =
-            "#ff4444";
-
-
-        if(
-            error.name ===
-            "NotAllowedError"
-        ){
-
-            alert(
-                "Camera permission denied. App settings mein Camera Allow karo."
-            );
-
-        }
-
-        else if(
-            error.name ===
-            "NotReadableError"
-        ){
-
-            alert(
-                "Camera kisi aur app mein use ho raha hai."
-            );
-
-        }
-
-        else{
-
-            alert(
-                "Camera Error: " +
-                error.name
-            );
-
-        }
-
-    }
-
+    requestAnimationFrame(process);
+  }
+  process();
 }
 
+function activateSkull(){
+  skull=true;
+  lastTrigger=Date.now();
+  goBtn.classList.add("active");
+  statusText.innerText="CONFIDENCE MODE 💀";
 
-/* =========================
-   PROCESS CAMERA
-========================= */
-
-async function processCamera(){
-
-    if(!running)
-        return;
-
-
-    if(video.readyState >= 2){
-
-        try{
-
-            await pose.send({
-                image:video
-            });
-
-        }
-
-        catch(error){
-
-            console.log(
-                "Pose error:",
-                error
-            );
-
-        }
-
-    }
-
-
-    requestAnimationFrame(
-        processCamera
-    );
-
+  if(!music){
+    startFunk();
+  }
 }
 
+function manualTrigger(){
+  skull=!skull;
 
-/* =========================
-   STOP CAMERA
-========================= */
-
-function stopCamera(){
-
-    running =
-        false;
-
-
-    if(stream){
-
-        stream
-        .getTracks()
-        .forEach(
-            function(track){
-
-                track.stop();
-
-            }
-        );
-
-        stream =
-            null;
-
-    }
-
-
-    video.srcObject =
-        null;
-
-
-    startButton.textContent =
-        "📷 START CAMERA";
-
-
-    statusElement.textContent =
-        "CAMERA OFF";
-
-
-    statusElement.style.color =
-        "#777";
-
-
-    messageElement.textContent =
-        "Press START CAMERA";
-
-
-    readyText.textContent =
-        "Waiting for camera...";
-
-
-    ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-
-    calibrated =
-        false;
-
-
-    calibrationFrames =
-        0;
-
-
-    baselineHip =
-        0;
-
-
-    highestHip =
-        0;
-
-
-    jumpState =
-        "GROUND";
-
+  if(skull){
+    activateSkull();
+  }else{
+    goBtn.classList.remove("active");
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    statusText.innerText="LOOK AT CAMERA 👀";
+  }
 }
 
+/* ---------- SKULL EDIT ---------- */
 
-/* =========================
-   START
-========================= */
+function drawSkull(lm){
 
-updateUI();
+  const W=canvas.width;
+  const H=canvas.height;
 
+  function P(i){
+    return {
+      x:(1-lm[i].x)*W,
+      y:lm[i].y*H
+    };
+  }
 
-/* =========================
-   CLEANUP
-========================= */
+  const top=P(10);
+  const chin=P(152);
+  const left=P(234);
+  const right=P(454);
+  const nose=P(1);
 
-window.addEventListener(
-    "beforeunload",
-    function(){
+  const width=Math.abs(right.x-left.x);
+  const height=Math.abs(chin.y-top.y);
 
-        stopCamera();
+  const cx=(left.x+right.x)/2;
 
+  /* Skull base */
+
+  ctx.save();
+
+  ctx.globalAlpha=.82;
+  ctx.fillStyle="white";
+  ctx.strokeStyle="white";
+  ctx.lineWidth=Math.max(3,width*.012);
+
+  ctx.beginPath();
+
+  ctx.ellipse(
+    cx,
+    top.y+height*.47,
+    width*.48,
+    height*.47,
+    0,0,Math.PI*2
+  );
+
+  ctx.fill();
+
+  /* Eye sockets */
+
+  ctx.globalAlpha=1;
+  ctx.fillStyle="#050505";
+
+  const le=P(159);
+  const re=P(386);
+
+  ctx.beginPath();
+  ctx.ellipse(
+    le.x,
+    le.y,
+    width*.105,
+    height*.065,
+    0,0,Math.PI*2
+  );
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.ellipse(
+    re.x,
+    re.y,
+    width*.105,
+    height*.065,
+    0,0,Math.PI*2
+  );
+  ctx.fill();
+
+  /* Nose */
+
+  ctx.beginPath();
+  ctx.moveTo(nose.x,nose.y-height*.035);
+  ctx.lineTo(nose.x-width*.055,nose.y+height*.07);
+  ctx.lineTo(nose.x+width*.055,nose.y+height*.07);
+  ctx.closePath();
+  ctx.fill();
+
+  /* Jaw */
+
+  ctx.fillStyle="white";
+  ctx.fillRect(
+    cx-width*.19,
+    chin.y-height*.16,
+    width*.38,
+    height*.14
+  );
+
+  /* Mouth */
+
+  ctx.strokeStyle="#050505";
+  ctx.lineWidth=Math.max(3,width*.012);
+
+  ctx.beginPath();
+  ctx.moveTo(cx-width*.17,chin.y-height*.105);
+  ctx.lineTo(cx+width*.17,chin.y-height*.105);
+  ctx.stroke();
+
+  /* Teeth lines */
+
+  for(let i=0;i<7;i++){
+    const x=cx-width*.15+i*(width*.30/6);
+
+    ctx.beginPath();
+    ctx.moveTo(x,chin.y-height*.105);
+    ctx.lineTo(x,chin.y-height*.035);
+    ctx.stroke();
+  }
+
+  /* Forehead cracks - clean digital style */
+
+  ctx.strokeStyle="#111";
+  ctx.lineWidth=Math.max(2,width*.008);
+
+  ctx.beginPath();
+  ctx.moveTo(cx-width*.08,top.y+height*.13);
+  ctx.lineTo(cx-width*.03,top.y+height*.21);
+  ctx.lineTo(cx-width*.09,top.y+height*.29);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(cx+width*.08,top.y+height*.13);
+  ctx.lineTo(cx+width*.03,top.y+height*.21);
+  ctx.lineTo(cx+width*.09,top.y+height*.29);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+/* ---------- ORIGINAL FUNK-STYLE BEAT ---------- */
+
+function startFunk(){
+
+  music=true;
+
+  try{
+    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+
+    if(audioCtx.state==="suspended"){
+      audioCtx.resume();
     }
-);
 
+    funkLoop();
+  }catch(e){}
+}
+
+function beat(freq,duration,type="sine",volume=.08){
+
+  if(!audioCtx) return;
+
+  const osc=audioCtx.createOscillator();
+  const gain=audioCtx.createGain();
+
+  osc.type=type;
+  osc.frequency.value=freq;
+
+  gain.gain.setValueAtTime(volume,audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(
+    .001,
+    audioCtx.currentTime+duration
+  );
+
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.start();
+  osc.stop(audioCtx.currentTime+duration);
+}
+
+function funkLoop(){
+
+  if(!music) return;
+
+  beat(65,.12,"sine",.18);
+
+  setTimeout(()=>{
+    if(!music)return;
+    beat(140,.08,"square",.035);
+  },130);
+
+  setTimeout(()=>{
+    if(!music)return;
+    beat(75,.1,"sine",.13);
+  },260);
+
+  setTimeout(()=>{
+    if(!music)return;
+    beat(180,.06,"triangle",.035);
+  },390);
+
+  setTimeout(()=>{
+    if(!music)return;
+    beat(65,.12,"sine",.18);
+  },520);
+
+  setTimeout(()=>{
+    if(!music)return;
+    beat(110,.08,"square",.035);
+  },650);
+
+  setTimeout(funkLoop,800);
+}
+
+function toggleMusic(){
+
+  if(!music){
+    startFunk();
+  }else{
+    music=false;
+    if(audioCtx){
+      audioCtx.suspend();
+    }
+  }
+}
+
+/* ---------- CAMERA FLIP ---------- */
+
+async function switchCamera(){
+
+  if(stream){
+    stream.getTracks().forEach(t=>t.stop());
+  }
+
+  front=!front;
+
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({
+      video:{
+        facingMode:front ? "user" : "environment",
+        width:{ideal:1280},
+        height:{ideal:720}
+      },
+      audio:false
+    });
+
+    video.srcObject=stream;
+  }catch(e){
+    alert("Camera switch nahi ho paaya.");
+  }
+}
+
+/* ---------- PHOTO ---------- */
+
+function capture(){
+
+  const photo=document.createElement("canvas");
+  photo.width=canvas.width;
+  photo.height=canvas.height;
+
+  const pctx=photo.getContext("2d");
+
+  pctx.save();
+
+  if(front){
+    pctx.translate(photo.width,0);
+    pctx.scale(-1,1);
+  }
+
+  pctx.drawImage(
+    video,
+    0,0,
+    photo.width,
+    photo.height
+  );
+
+  pctx.restore();
+
+  pctx.drawImage(
+    canvas,
+    0,0,
+    photo.width,
+    photo.height
+  );
+
+  const a=document.createElement("a");
+  a.download="confidence-skull.png";
+  a.href=photo.toDataURL("image/png");
+  a.click();
+}
 </script>
 
 </body>
