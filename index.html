@@ -1,13 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<meta name="theme-color" content="#050505">
 
-<title>JUMPX — Jump Counter</title>
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width,initial-scale=1.0">
+
+<meta name="theme-color"
+content="#050505">
+
+<title>JUMPX - Jump Counter</title>
 
 <style>
+
 *{
     margin:0;
     padding:0;
@@ -22,7 +29,7 @@ body{
 }
 
 header{
-    height:70px;
+    height:65px;
     display:flex;
     align-items:center;
     justify-content:space-between;
@@ -31,7 +38,7 @@ header{
 }
 
 .logo{
-    font-size:26px;
+    font-size:25px;
     font-weight:900;
     letter-spacing:2px;
 }
@@ -42,15 +49,15 @@ header{
 
 .status{
     font-size:11px;
-    font-weight:bold;
     color:#777;
+    font-weight:bold;
 }
 
 .container{
     width:96%;
     max-width:700px;
     margin:auto;
-    padding:14px 0 35px;
+    padding:10px 0 35px;
 }
 
 /* BIG CAMERA */
@@ -58,12 +65,12 @@ header{
 .camera-box{
     position:relative;
     width:100%;
-    height:75vh;
+    height:78vh;
     min-height:500px;
     max-height:850px;
     background:#111;
     border:1px solid #292929;
-    border-radius:18px;
+    border-radius:16px;
     overflow:hidden;
 }
 
@@ -92,8 +99,9 @@ header{
     text-align:center;
     color:#aaa;
     font-size:15px;
-    padding:25px;
+    padding:20px;
     pointer-events:none;
+    z-index:3;
 }
 
 .corner{
@@ -102,30 +110,30 @@ header{
     height:30px;
     border-color:#00ff88;
     border-style:solid;
-    z-index:5;
+    z-index:4;
 }
 
 .c1{
-    top:15px;
-    left:15px;
+    top:14px;
+    left:14px;
     border-width:2px 0 0 2px;
 }
 
 .c2{
-    top:15px;
-    right:15px;
+    top:14px;
+    right:14px;
     border-width:2px 2px 0 0;
 }
 
 .c3{
-    bottom:15px;
-    left:15px;
+    bottom:14px;
+    left:14px;
     border-width:0 0 2px 2px;
 }
 
 .c4{
-    bottom:15px;
-    right:15px;
+    bottom:14px;
+    right:14px;
     border-width:0 2px 2px 0;
 }
 
@@ -133,18 +141,18 @@ header{
 
 .counter{
     text-align:center;
-    padding:24px 0 14px;
+    padding:20px 0 12px;
 }
 
 .label{
     color:#777;
-    font-size:13px;
+    font-size:12px;
     letter-spacing:4px;
     font-weight:bold;
 }
 
 .number{
-    font-size:90px;
+    font-size:88px;
     line-height:1;
     font-weight:900;
 }
@@ -188,7 +196,7 @@ header{
 .buttons{
     display:flex;
     gap:10px;
-    margin-top:15px;
+    margin-top:14px;
 }
 
 button{
@@ -219,7 +227,7 @@ button{
     display:grid;
     grid-template-columns:repeat(3,1fr);
     gap:10px;
-    margin-top:15px;
+    margin-top:14px;
 }
 
 .stat{
@@ -249,7 +257,7 @@ button{
     border:1px solid #222;
     border-radius:14px;
     padding:18px;
-    margin-top:15px;
+    margin-top:14px;
 }
 
 .info h3{
@@ -263,25 +271,24 @@ button{
     line-height:1.8;
 }
 
-.warning{
-    color:#ffcc00;
-    font-size:11px;
+.ready{
+    color:#00ff88;
+    font-weight:bold;
     margin-top:10px;
+    font-size:12px;
 }
 
-/* SMALL SCREEN */
+/* MOBILE */
 
 @media(max-width:500px){
 
     .container{
         width:98%;
-        padding-top:8px;
     }
 
     .camera-box{
-        height:78vh;
-        min-height:480px;
-        border-radius:14px;
+        height:76vh;
+        min-height:470px;
     }
 
     .number{
@@ -295,8 +302,11 @@ button{
     .reset{
         width:100%;
     }
+
 }
+
 </style>
+
 </head>
 
 <body>
@@ -310,177 +320,86 @@ button{
     <div
         class="status"
         id="status">
+
         CAMERA OFF
+
     </div>
 
 </header>
 
+
 <div class="container">
 
-    <!-- CAMERA -->
 
-    <div class="camera-box">
+<!-- CAMERA -->
 
-        <video
-            id="video"
-            autoplay
-            muted
-            playsinline>
-        </video>
+<div class="camera-box">
 
-        <canvas id="canvas"></canvas>
+    <video
+        id="video"
+        autoplay
+        muted
+        playsinline>
+    </video>
+
+    <canvas id="canvas"></canvas>
+
+    <div
+        class="camera-message"
+        id="message">
+
+        Press START CAMERA
+
+    </div>
+
+    <div class="corner c1"></div>
+    <div class="corner c2"></div>
+    <div class="corner c3"></div>
+    <div class="corner c4"></div>
+
+</div>
+
+
+<!-- COUNTER -->
+
+<div class="counter">
+
+    <div class="label">
+        JUMPS
+    </div>
+
+    <div
+        class="number"
+        id="count">
+
+        0
+
+    </div>
+
+</div>
+
+
+<!-- GOAL -->
+
+<div class="goal-box">
+
+    <div class="goal-top">
+
+        <span>
+            DAILY GOAL
+        </span>
+
+        <span id="goalText">
+            0 / 50
+        </span>
+
+    </div>
+
+    <div class="progress">
 
         <div
-            class="camera-message"
-            id="message">
-            Press START CAMERA
-        </div>
-
-        <div class="corner c1"></div>
-        <div class="corner c2"></div>
-        <div class="corner c3"></div>
-        <div class="corner c4"></div>
-
-    </div>
-
-    <!-- COUNTER -->
-
-    <div class="counter">
-
-        <div class="label">
-            JUMPS
-        </div>
-
-        <div
-            class="number"
-            id="count">
-            0
-        </div>
-
-    </div>
-
-    <!-- GOAL -->
-
-    <div class="goal-box">
-
-        <div class="goal-top">
-
-            <span>
-                DAILY GOAL
-            </span>
-
-            <span id="goalText">
-                0 / 50
-            </span>
-
-        </div>
-
-        <div class="progress">
-
-            <div
-                class="progress-bar"
-                id="progress">
-            </div>
-
-        </div>
-
-    </div>
-
-    <!-- BUTTONS -->
-
-    <div class="buttons">
-
-        <button
-            class="start"
-            id="startBtn"
-            onclick="startCamera()">
-
-            📷 START CAMERA
-
-        </button>
-
-        <button
-            class="reset"
-            onclick="resetCounter()">
-
-            ↻ RESET
-
-        </button>
-
-    </div>
-
-    <!-- STATS -->
-
-    <div class="stats">
-
-        <div class="stat">
-
-            <div
-                class="stat-number"
-                id="best">
-                0
-            </div>
-
-            <div class="stat-label">
-                BEST
-            </div>
-
-        </div>
-
-        <div class="stat">
-
-            <div
-                class="stat-number"
-                id="today">
-                0
-            </div>
-
-            <div class="stat-label">
-                TODAY
-            </div>
-
-        </div>
-
-        <div class="stat">
-
-            <div class="stat-number">
-                50
-            </div>
-
-            <div class="stat-label">
-                GOAL
-            </div>
-
-        </div>
-
-    </div>
-
-    <!-- INFO -->
-
-    <div class="info">
-
-        <h3>
-            HOW TO USE
-        </h3>
-
-        <p>
-
-            1. Phone ko stable jagah par rakho.<br>
-
-            2. Full body camera mein visible rakho.<br>
-
-            3. START CAMERA dabao.<br>
-
-            4. Camera se thoda door khade ho jao.<br>
-
-            5. Jump karna start karo.
-
-        </p>
-
-        <div class="warning">
-
-            ⚠ Camera permission Allow karna zaroori hai.
-
+            class="progress-bar"
+            id="progress">
         </div>
 
     </div>
@@ -488,7 +407,119 @@ button{
 </div>
 
 
-<!-- MEDIAPIPE POSE -->
+<!-- BUTTONS -->
+
+<div class="buttons">
+
+    <button
+        class="start"
+        id="startBtn"
+        onclick="startCamera()">
+
+        📷 START CAMERA
+
+    </button>
+
+    <button
+        class="reset"
+        onclick="resetCounter()">
+
+        ↻ RESET
+
+    </button>
+
+</div>
+
+
+<!-- STATS -->
+
+<div class="stats">
+
+    <div class="stat">
+
+        <div
+            class="stat-number"
+            id="best">
+
+            0
+
+        </div>
+
+        <div class="stat-label">
+            BEST
+        </div>
+
+    </div>
+
+
+    <div class="stat">
+
+        <div
+            class="stat-number"
+            id="today">
+
+            0
+
+        </div>
+
+        <div class="stat-label">
+            TODAY
+        </div>
+
+    </div>
+
+
+    <div class="stat">
+
+        <div class="stat-number">
+            50
+        </div>
+
+        <div class="stat-label">
+            GOAL
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- INFO -->
+
+<div class="info">
+
+    <h3>
+        HOW TO USE
+    </h3>
+
+    <p>
+
+        1. Phone ko stable jagah par rakho.<br>
+
+        2. Full body camera mein visible rakho.<br>
+
+        3. START CAMERA dabao.<br>
+
+        4. 2 seconds seedhe khade raho.<br>
+
+        5. "READY - JUMP NOW" aane ke baad jump karo.
+
+    </p>
+
+    <div class="ready"
+         id="readyText">
+
+        Waiting for camera...
+
+    </div>
+
+</div>
+
+
+</div>
+
+
+<!-- MEDIAPIPE -->
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
 
@@ -531,15 +562,32 @@ document.getElementById("status");
 const messageElement =
 document.getElementById("message");
 
+const readyText =
+document.getElementById("readyText");
+
 const startButton =
 document.getElementById("startBtn");
 
 
 /* =========================
-   VARIABLES
+   SETTINGS
 ========================= */
 
 const GOAL = 50;
+
+/*
+   Jump sensitivity.
+
+   LOWER = easier detection
+   HIGHER = harder detection
+*/
+
+const JUMP_THRESHOLD = 0.018;
+
+
+/* =========================
+   VARIABLES
+========================= */
 
 let count = 0;
 
@@ -552,19 +600,17 @@ let stream = null;
 
 let running = false;
 
-let previousHip = null;
+let calibrated = false;
 
-let previousFoot = null;
+let calibrationFrames = 0;
 
-let jumpState = "ground";
+let baselineHip = 0;
+
+let highestHip = 0;
+
+let jumpState = "GROUND";
 
 let lastJumpTime = 0;
-
-let history = [];
-
-let calibration = [];
-
-let calibrated = false;
 
 
 /* =========================
@@ -585,38 +631,14 @@ function updateUI(){
     goalText.textContent =
         count + " / " + GOAL;
 
-    const percentage =
+    const percent =
         Math.min(
-            (count / GOAL) * 100,
+            count / GOAL * 100,
             100
         );
 
     progressElement.style.width =
-        percentage + "%";
-}
-
-
-/* =========================
-   RESET
-========================= */
-
-function resetCounter(){
-
-    count = 0;
-
-    previousHip = null;
-
-    previousFoot = null;
-
-    jumpState = "ground";
-
-    history = [];
-
-    calibration = [];
-
-    calibrated = false;
-
-    updateUI();
+        percent + "%";
 }
 
 
@@ -636,24 +658,53 @@ function addJump(){
             "jumpBest",
             best
         );
+
     }
 
     updateUI();
 
-    /* Small vibration */
+    if(navigator.vibrate){
 
-    if(
-        navigator.vibrate
-    ){
-
-        navigator.vibrate(50);
+        navigator.vibrate(60);
 
     }
+
 }
 
 
 /* =========================
-   POSE
+   RESET
+========================= */
+
+function resetCounter(){
+
+    count = 0;
+
+    calibrated = false;
+
+    calibrationFrames = 0;
+
+    baselineHip = 0;
+
+    highestHip = 0;
+
+    jumpState = "GROUND";
+
+    lastJumpTime = 0;
+
+    messageElement.textContent =
+        "Press START CAMERA";
+
+    readyText.textContent =
+        "Waiting for camera...";
+
+    updateUI();
+
+}
+
+
+/* =========================
+   MEDIAPIPE
 ========================= */
 
 const pose =
@@ -677,9 +728,9 @@ pose.setOptions({
 
     enableSegmentation:false,
 
-    minDetectionConfidence:.5,
+    minDetectionConfidence:0.5,
 
-    minTrackingConfidence:.5
+    minTrackingConfidence:0.5
 
 });
 
@@ -709,22 +760,28 @@ pose.onResults(function(results){
     );
 
 
-    if(
-        !results.poseLandmarks
-    ){
+    /* NO BODY */
+
+    if(!results.poseLandmarks){
 
         messageElement.textContent =
             "BODY NOT DETECTED";
 
+        readyText.textContent =
+            "Move into camera view";
+
         return;
+
     }
 
+
+    /* BODY FOUND */
 
     messageElement.textContent =
         "BODY DETECTED";
 
 
-    /* Draw skeleton */
+    /* DRAW SKELETON */
 
     drawConnectors(
 
@@ -757,9 +814,7 @@ pose.onResults(function(results){
     );
 
 
-    /* =========================
-       BODY LANDMARKS
-    ========================= */
+    /* HIPS */
 
     const leftHip =
         results.poseLandmarks[23];
@@ -767,39 +822,19 @@ pose.onResults(function(results){
     const rightHip =
         results.poseLandmarks[24];
 
-    const leftAnkle =
-        results.poseLandmarks[27];
 
-    const rightAnkle =
-        results.poseLandmarks[28];
-
-
-    if(
-        !leftHip ||
-        !rightHip ||
-        !leftAnkle ||
-        !rightAnkle
-    ){
-
+    if(!leftHip || !rightHip)
         return;
-    }
 
 
-    /* Average hip */
+    /*
+       Average hip position
+    */
 
     const hipY =
         (
             leftHip.y +
             rightHip.y
-        ) / 2;
-
-
-    /* Average ankle */
-
-    const ankleY =
-        (
-            leftAnkle.y +
-            rightAnkle.y
         ) / 2;
 
 
@@ -809,150 +844,146 @@ pose.onResults(function(results){
 
     if(!calibrated){
 
-        calibration.push({
-            hip:hipY,
-            ankle:ankleY
-        });
+        calibrationFrames++;
+
+        /*
+           Slowly calculate
+           standing position
+        */
+
+        baselineHip =
+            (
+                baselineHip *
+                (calibrationFrames - 1)
+                +
+                hipY
+            )
+            /
+            calibrationFrames;
 
 
-        if(
-            calibration.length >= 25
-        ){
+        messageElement.textContent =
+            "STAND STILL";
+
+
+        readyText.textContent =
+            "Calibrating... " +
+            Math.min(
+                Math.round(
+                    calibrationFrames / 30 * 100
+                ),
+                100
+            ) +
+            "%";
+
+
+        if(calibrationFrames >= 30){
 
             calibrated = true;
 
+            highestHip =
+                baselineHip;
+
+            jumpState =
+                "GROUND";
+
             messageElement.textContent =
-                "READY — JUMP NOW";
+                "READY - JUMP NOW";
+
+            readyText.textContent =
+                "🟢 READY - JUMP NOW";
 
         }
 
         return;
+
     }
 
 
     /* =========================
-       MOVEMENT
+       JUMP DETECTION
     ========================= */
 
-    if(previousHip === null){
-
-        previousHip = hipY;
-
-        previousFoot = ankleY;
-
-        return;
-    }
-
-
-    const hipMovement =
-        previousHip - hipY;
-
-
-    const footMovement =
-        previousFoot - ankleY;
-
-
-    previousHip = hipY;
-
-    previousFoot = ankleY;
-
-
-    history.push({
-        hip:hipMovement,
-        foot:footMovement
-    });
-
-
-    if(history.length > 10){
-
-        history.shift();
-
-    }
-
-
-    let hipAverage = 0;
-
-    let footAverage = 0;
-
-
-    for(
-        let i = 0;
-        i < history.length;
-        i++
-    ){
-
-        hipAverage +=
-            history[i].hip;
-
-        footAverage +=
-            history[i].foot;
-
-    }
-
-
-    hipAverage /=
-        history.length;
-
-    footAverage /=
-        history.length;
+    const rise =
+        baselineHip - hipY;
 
 
     /*
-       UPWARD MOVEMENT
+       BODY GOES UP
     */
-
-    const goingUp =
-        hipAverage > 0.004 ||
-        footAverage > 0.004;
-
-
-    /*
-       DOWNWARD MOVEMENT
-    */
-
-    const goingDown =
-        hipAverage < -0.003 ||
-        footAverage < -0.003;
-
-
-    /* =========================
-       JUMP STATE MACHINE
-    ========================= */
 
     if(
-        jumpState === "ground" &&
-        goingUp
+        jumpState === "GROUND" &&
+        rise > JUMP_THRESHOLD
     ){
 
         jumpState =
-            "air";
+            "AIR";
+
+        highestHip =
+            hipY;
+
+        messageElement.textContent =
+            "⬆ IN AIR";
 
     }
 
 
+    /*
+       While in air,
+       remember highest point
+    */
+
     if(
-        jumpState === "air" &&
-        goingDown
+        jumpState === "AIR"
     ){
-
-        const now =
-            Date.now();
-
 
         if(
-            now - lastJumpTime > 500
+            hipY < highestHip
         ){
 
-            addJump();
-
-            lastJumpTime =
-                now;
+            highestHip =
+                hipY;
 
         }
 
 
-        jumpState =
-            "ground";
+        /*
+           Body must come
+           noticeably back down
+        */
+
+        const returned =
+            hipY >
+            baselineHip - 0.006;
+
+
+        if(returned){
+
+            const now =
+                Date.now();
+
+
+            if(
+                now - lastJumpTime >
+                500
+            ){
+
+                addJump();
+
+                lastJumpTime =
+                    now;
+
+                messageElement.textContent =
+                    "🔥 JUMP +1";
+
+            }
+
+
+            jumpState =
+                "GROUND";
+
+        }
 
     }
 
@@ -970,6 +1001,7 @@ async function startCamera(){
         stopCamera();
 
         return;
+
     }
 
 
@@ -983,6 +1015,7 @@ async function startCamera(){
         );
 
         return;
+
     }
 
 
@@ -997,7 +1030,7 @@ async function startCamera(){
 
 
         messageElement.textContent =
-            "Allow camera permission";
+            "ALLOW CAMERA";
 
 
         stream =
@@ -1039,6 +1072,26 @@ async function startCamera(){
             true;
 
 
+        calibrated =
+            false;
+
+
+        calibrationFrames =
+            0;
+
+
+        baselineHip =
+            0;
+
+
+        highestHip =
+            0;
+
+
+        jumpState =
+            "GROUND";
+
+
         startButton.textContent =
             "⏹ STOP CAMERA";
 
@@ -1047,25 +1100,16 @@ async function startCamera(){
             "CAMERA ON";
 
 
-        messageElement.textContent =
+        readyText.textContent =
             "Calibrating...";
-
-
-        previousHip = null;
-
-        previousFoot = null;
-
-        history = [];
-
-        calibration = [];
-
-        calibrated = false;
 
 
         processCamera();
 
 
-    }catch(error){
+    }
+
+    catch(error){
 
         console.error(error);
 
@@ -1084,7 +1128,7 @@ async function startCamera(){
         ){
 
             alert(
-                "Camera permission denied. APK settings mein Camera Allow karo."
+                "Camera permission denied. App settings mein Camera Allow karo."
             );
 
         }
@@ -1103,7 +1147,7 @@ async function startCamera(){
         else{
 
             alert(
-                "Camera error: " +
+                "Camera Error: " +
                 error.name
             );
 
@@ -1115,7 +1159,7 @@ async function startCamera(){
 
 
 /* =========================
-   CAMERA PROCESSING
+   PROCESS CAMERA
 ========================= */
 
 async function processCamera(){
@@ -1124,9 +1168,7 @@ async function processCamera(){
         return;
 
 
-    if(
-        video.readyState >= 2
-    ){
+    if(video.readyState >= 2){
 
         try{
 
@@ -1134,9 +1176,12 @@ async function processCamera(){
                 image:video
             });
 
-        }catch(error){
+        }
+
+        catch(error){
 
             console.log(
+                "Pose error:",
                 error
             );
 
@@ -1148,6 +1193,7 @@ async function processCamera(){
     requestAnimationFrame(
         processCamera
     );
+
 }
 
 
@@ -1166,11 +1212,15 @@ function stopCamera(){
         stream
         .getTracks()
         .forEach(
-            track =>
-            track.stop()
+            function(track){
+
+                track.stop();
+
+            }
         );
 
-        stream = null;
+        stream =
+            null;
 
     }
 
@@ -1195,6 +1245,10 @@ function stopCamera(){
         "Press START CAMERA";
 
 
+    readyText.textContent =
+        "Waiting for camera...";
+
+
     ctx.clearRect(
         0,
         0,
@@ -1203,34 +1257,46 @@ function stopCamera(){
     );
 
 
-    previousHip =
-        null;
-
-    previousFoot =
-        null;
-
-    history =
-        [];
-
-    calibration =
-        [];
-
     calibrated =
         false;
+
+
+    calibrationFrames =
+        0;
+
+
+    baselineHip =
+        0;
+
+
+    highestHip =
+        0;
+
+
+    jumpState =
+        "GROUND";
 
 }
 
 
 /* =========================
-   INITIALIZE
+   START
 ========================= */
 
 updateUI();
 
 
+/* =========================
+   CLEANUP
+========================= */
+
 window.addEventListener(
     "beforeunload",
-    stopCamera
+    function(){
+
+        stopCamera();
+
+    }
 );
 
 </script>
