@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -8,39 +8,34 @@
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
 
 <style>
-*{
-  box-sizing:border-box;
-  margin:0;
-  padding:0;
-  font-family:Arial,sans-serif;
-}
+*{box-sizing:border-box}
 
 body{
+  margin:0;
   background:#050505;
-  color:white;
-  min-height:100vh;
+  color:#fff;
+  font-family:Arial,sans-serif;
   overflow:hidden;
 }
 
 header{
-  height:70px;
+  height:65px;
   display:flex;
   align-items:center;
   justify-content:center;
   font-size:25px;
   font-weight:900;
-  letter-spacing:4px;
+  letter-spacing:5px;
 }
 
-#cameraBox{
+#camera{
   position:relative;
   width:94%;
-  height:72vh;
+  height:calc(100vh - 150px);
   margin:auto;
   border-radius:25px;
   overflow:hidden;
   background:#111;
-  border:1px solid #333;
 }
 
 video{
@@ -55,7 +50,7 @@ canvas{
   inset:0;
   width:100%;
   height:100%;
-  pointer-events:none;
+  display:none;
 }
 
 #status{
@@ -64,43 +59,27 @@ canvas{
   left:50%;
   transform:translateX(-50%);
   background:rgba(0,0,0,.7);
-  padding:9px 15px;
-  border-radius:20px;
+  padding:10px 17px;
+  border-radius:25px;
   font-size:12px;
   letter-spacing:1px;
   z-index:5;
+  white-space:nowrap;
 }
 
-.controls{
-  position:absolute;
+#reset{
+  position:fixed;
   bottom:20px;
-  left:0;
-  right:0;
-  display:flex;
-  justify-content:center;
-  gap:10px;
-  z-index:10;
-}
-
-button{
+  left:50%;
+  transform:translateX(-50%);
+  display:none;
   border:0;
-  border-radius:14px;
-  padding:14px 18px;
-  background:#fff;
-  color:#000;
-  font-weight:800;
-  cursor:pointer;
-}
-
-#go{
-  background:#111;
-  color:white;
-  border:1px solid #555;
-}
-
-#go.active{
+  border-radius:15px;
+  padding:14px 25px;
+  font-weight:bold;
   background:white;
   color:black;
+  z-index:20;
 }
 
 #start{
@@ -118,6 +97,7 @@ button{
 #start h1{
   font-size:42px;
   letter-spacing:7px;
+  margin:0;
 }
 
 #start p{
@@ -125,7 +105,12 @@ button{
 }
 
 #start button{
+  border:0;
+  background:white;
+  color:black;
   padding:16px 35px;
+  border-radius:15px;
+  font-weight:bold;
   font-size:16px;
 }
 </style>
@@ -135,47 +120,53 @@ button{
 
 <div id="start">
   <h1>CONFIDENCE</h1>
-  <p>Face the camera to activate the edit.</p>
-  <button onclick="startApp()">START</button>
+  <p>Look away... then look into the camera.</p>
+  <button onclick="startCamera()">START</button>
 </div>
 
 <header>CONFIDENCE</header>
 
-<div id="cameraBox">
-  <video id="video" autoplay playsinline muted></video>
-  <canvas id="canvas"></canvas>
-  <div id="status">WAITING FOR CAMERA</div>
+<div id="camera">
 
-  <div class="controls">
-    <button id="go" onclick="manualTrigger()">GO 💀</button>
-    <button onclick="switchCamera()">FLIP 🔄</button>
-    <button onclick="toggleMusic()">FUNK 🔊</button>
-    <button onclick="capture()">PHOTO 📸</button>
-  </div>
+  <video id="video" autoplay playsinline muted></video>
+
+  <canvas id="output"></canvas>
+
+  <div id="status">LOOK AWAY FIRST 👈</div>
+
 </div>
 
+<button id="reset" onclick="resetApp()">TRY AGAIN 🔄</button>
+
 <script>
+
 const video=document.getElementById("video");
-const canvas=document.getElementById("canvas");
+const canvas=document.getElementById("output");
 const ctx=canvas.getContext("2d");
-const statusText=document.getElementById("status");
-const goBtn=document.getElementById("go");
+const statusBox=document.getElementById("status");
+const resetBtn=document.getElementById("reset");
 
 let stream=null;
-let front=true;
-let skull=false;
-let music=false;
+let triggered=false;
+let lookedAway=false;
+let lastFaceTime=0;
 let audioCtx=null;
-let lastTrigger=0;
-let manual=false;
+let musicStarted=false;
 
-async function startApp(){
+
+/* =========================
+   START CAMERA
+========================= */
+
+async function startCamera(){
+
   document.getElementById("start").style.display="none";
 
   try{
+
     stream=await navigator.mediaDevices.getUserMedia({
       video:{
-        facingMode:front ? "user" : "environment",
+        facingMode:"user",
         width:{ideal:1280},
         height:{ideal:720}
       },
@@ -185,184 +176,351 @@ async function startApp(){
     video.srcObject=stream;
 
     video.onloadedmetadata=()=>{
+
       canvas.width=video.videoWidth;
       canvas.height=video.videoHeight;
+
+      detectFace();
     };
 
-    statusText.innerText="LOOK AT CAMERA 👀";
+  }catch(error){
 
-    initFaceMesh();
-  }catch(e){
-    statusText.innerText="CAMERA ACCESS DENIED";
-    alert("Camera permission allow karo. HTTPS ya localhost par app open karo.");
+    statusBox.innerText="CAMERA PERMISSION REQUIRED";
+
+    alert(
+      "Camera permission allow karo. " +
+      "Chrome/HTTPS ya localhost par app open karo."
+    );
   }
 }
 
+
+/* =========================
+   MEDIAPIPE FACE MESH
+========================= */
+
 const faceMesh=new FaceMesh({
+
   locateFile:(file)=>{
-    return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+    return "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/"+file;
   }
+
 });
 
 faceMesh.setOptions({
+
   maxNumFaces:1,
   refineLandmarks:true,
-  minDetectionConfidence:.55,
-  minTrackingConfidence:.55
+  minDetectionConfidence:.6,
+  minTrackingConfidence:.6
+
 });
 
-faceMesh.onResults(results=>{
-  ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  if(!results.multiFaceLandmarks ||
-     results.multiFaceLandmarks.length===0){
-    statusText.innerText="LOOK AT CAMERA 👀";
+faceMesh.onResults(results=>{
+
+  if(triggered) return;
+
+  if(
+    !results.multiFaceLandmarks ||
+    results.multiFaceLandmarks.length===0
+  ){
+    statusBox.innerText="LOOK AT CAMERA 👀";
     return;
   }
 
-  const lm=results.multiFaceLandmarks[0];
+  const face=results.multiFaceLandmarks[0];
 
-  const leftEye=lm[159];
-  const rightEye=lm[386];
+  const leftEyeOuter=face[33];
+  const leftEyeInner=face[133];
+
+  const rightEyeInner=face[362];
+  const rightEyeOuter=face[263];
+
+  const nose=face[1];
 
   /*
-    Simple camera-facing check:
-    both eyes and nose visible = face is looking
-    generally toward camera.
+    Eye/face geometry.
+    Pehle user ko thoda side dekhna hoga.
+    Phir camera ki taraf dekhne par
+    trigger activate hoga.
   */
-  const eyeDistance=Math.abs(rightEye.x-leftEye.x);
 
-  if(eyeDistance>.035){
-    if(!skull && Date.now()-lastTrigger>1500){
-      activateSkull();
+  const leftCenterX=
+    (leftEyeOuter.x+leftEyeInner.x)/2;
+
+  const rightCenterX=
+    (rightEyeInner.x+rightEyeOuter.x)/2;
+
+  const eyeCenter=
+    (leftCenterX+rightCenterX)/2;
+
+  const faceCenter=nose.x;
+
+  const difference=Math.abs(
+    eyeCenter-faceCenter
+  );
+
+  /*
+    Jab face camera se hatkar dekhta hai,
+    geometry change hoti hai.
+  */
+
+  if(difference>.018){
+
+    lookedAway=true;
+
+    statusBox.innerText="NOW LOOK AT CAMERA 👀";
+
+    return;
+  }
+
+  /*
+    Look-away ke baad camera ki taraf
+    wapas dekhte hi capture.
+  */
+
+  if(lookedAway){
+
+    if(Date.now()-lastFaceTime>900){
+
+      lastFaceTime=Date.now();
+
+      freezeAndEdit(face);
+
     }
+
   }
 
-  if(skull){
-    drawSkull(lm);
-    statusText.innerText="CONFIDENCE MODE 💀";
-  }
 });
 
-async function initFaceMesh(){
-  async function process(){
-    if(video.readyState>=2){
-      await faceMesh.send({image:video});
-    }
-    requestAnimationFrame(process);
+
+/* =========================
+   FACE DETECTION LOOP
+========================= */
+
+async function detectFace(){
+
+  if(triggered) return;
+
+  if(video.readyState>=2){
+
+    await faceMesh.send({
+      image:video
+    });
+
   }
-  process();
+
+  requestAnimationFrame(detectFace);
 }
 
-function activateSkull(){
-  skull=true;
-  lastTrigger=Date.now();
-  goBtn.classList.add("active");
-  statusText.innerText="CONFIDENCE MODE 💀";
 
-  if(!music){
-    startFunk();
+/* =========================
+   FREEZE + PHOTO
+========================= */
+
+function freezeAndEdit(face){
+
+  triggered=true;
+
+  statusBox.innerText="FREEZING... 💀";
+
+  /*
+    Stop live camera.
+  */
+
+  if(stream){
+
+    stream.getTracks().forEach(track=>{
+      track.stop();
+    });
+
   }
+
+  /*
+    Capture exact current frame.
+  */
+
+  ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  ctx.save();
+
+  /*
+    Selfie mirror.
+  */
+
+  ctx.translate(canvas.width,0);
+  ctx.scale(-1,1);
+
+  ctx.drawImage(
+    video,
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  ctx.restore();
+
+  /*
+    Video ke mirror ko match karne ke liye
+    landmarks ko canvas coordinates mein convert.
+  */
+
+  drawSkull(face);
+
+  canvas.style.display="block";
+  video.style.display="none";
+
+  statusBox.innerText="CONFIDENCE MODE 💀";
+
+  resetBtn.style.display="block";
+
+  startFunk();
+
 }
 
-function manualTrigger(){
-  skull=!skull;
 
-  if(skull){
-    activateSkull();
-  }else{
-    goBtn.classList.remove("active");
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    statusText.innerText="LOOK AT CAMERA 👀";
-  }
-}
+/* =========================
+   SKULL EDIT
+========================= */
 
-/* ---------- SKULL EDIT ---------- */
-
-function drawSkull(lm){
+function drawSkull(face){
 
   const W=canvas.width;
   const H=canvas.height;
 
-  function P(i){
-    return {
-      x:(1-lm[i].x)*W,
-      y:lm[i].y*H
+  function point(index){
+
+    return{
+
+      x:(1-face[index].x)*W,
+      y:face[index].y*H
+
     };
+
   }
 
-  const top=P(10);
-  const chin=P(152);
-  const left=P(234);
-  const right=P(454);
-  const nose=P(1);
+  const top=point(10);
+  const chin=point(152);
+  const left=point(234);
+  const right=point(454);
 
-  const width=Math.abs(right.x-left.x);
-  const height=Math.abs(chin.y-top.y);
+  const nose=point(1);
+
+  const leftEye=point(159);
+  const rightEye=point(386);
+
+  const width=Math.abs(
+    right.x-left.x
+  );
+
+  const height=Math.abs(
+    chin.y-top.y
+  );
 
   const cx=(left.x+right.x)/2;
 
-  /* Skull base */
-
   ctx.save();
 
-  ctx.globalAlpha=.82;
-  ctx.fillStyle="white";
-  ctx.strokeStyle="white";
-  ctx.lineWidth=Math.max(3,width*.012);
+  /*
+    Skull face.
+  */
+
+  ctx.globalAlpha=.88;
+
+  ctx.fillStyle="#ffffff";
 
   ctx.beginPath();
 
   ctx.ellipse(
     cx,
-    top.y+height*.47,
-    width*.48,
-    height*.47,
-    0,0,Math.PI*2
+    top.y+height*.46,
+    width*.47,
+    height*.46,
+    0,
+    0,
+    Math.PI*2
   );
 
   ctx.fill();
 
-  /* Eye sockets */
+
+  /*
+    Eye sockets.
+  */
 
   ctx.globalAlpha=1;
+
   ctx.fillStyle="#050505";
 
-  const le=P(159);
-  const re=P(386);
-
   ctx.beginPath();
+
   ctx.ellipse(
-    le.x,
-    le.y,
+    leftEye.x,
+    leftEye.y,
     width*.105,
     height*.065,
-    0,0,Math.PI*2
+    0,
+    0,
+    Math.PI*2
   );
+
   ctx.fill();
 
+
   ctx.beginPath();
+
   ctx.ellipse(
-    re.x,
-    re.y,
+    rightEye.x,
+    rightEye.y,
     width*.105,
     height*.065,
-    0,0,Math.PI*2
+    0,
+    0,
+    Math.PI*2
   );
+
   ctx.fill();
 
-  /* Nose */
+
+  /*
+    Nose socket.
+  */
 
   ctx.beginPath();
-  ctx.moveTo(nose.x,nose.y-height*.035);
-  ctx.lineTo(nose.x-width*.055,nose.y+height*.07);
-  ctx.lineTo(nose.x+width*.055,nose.y+height*.07);
+
+  ctx.moveTo(
+    nose.x,
+    nose.y-height*.035
+  );
+
+  ctx.lineTo(
+    nose.x-width*.055,
+    nose.y+height*.065
+  );
+
+  ctx.lineTo(
+    nose.x+width*.055,
+    nose.y+height*.065
+  );
+
   ctx.closePath();
+
   ctx.fill();
 
-  /* Jaw */
 
-  ctx.fillStyle="white";
+  /*
+    Jaw.
+  */
+
+  ctx.fillStyle="#ffffff";
+
   ctx.fillRect(
     cx-width*.19,
     chin.y-height*.16,
@@ -370,75 +528,163 @@ function drawSkull(lm){
     height*.14
   );
 
-  /* Mouth */
+
+  /*
+    Mouth.
+  */
 
   ctx.strokeStyle="#050505";
-  ctx.lineWidth=Math.max(3,width*.012);
+
+  ctx.lineWidth=Math.max(
+    3,
+    width*.012
+  );
 
   ctx.beginPath();
-  ctx.moveTo(cx-width*.17,chin.y-height*.105);
-  ctx.lineTo(cx+width*.17,chin.y-height*.105);
+
+  ctx.moveTo(
+    cx-width*.17,
+    chin.y-height*.105
+  );
+
+  ctx.lineTo(
+    cx+width*.17,
+    chin.y-height*.105
+  );
+
   ctx.stroke();
 
-  /* Teeth lines */
+
+  /*
+    Teeth.
+  */
 
   for(let i=0;i<7;i++){
-    const x=cx-width*.15+i*(width*.30/6);
+
+    const x=
+      cx-width*.15+
+      i*(width*.30/6);
 
     ctx.beginPath();
-    ctx.moveTo(x,chin.y-height*.105);
-    ctx.lineTo(x,chin.y-height*.035);
+
+    ctx.moveTo(
+      x,
+      chin.y-height*.105
+    );
+
+    ctx.lineTo(
+      x,
+      chin.y-height*.035
+    );
+
     ctx.stroke();
+
   }
 
-  /* Forehead cracks - clean digital style */
+
+  /*
+    Digital skull cracks.
+  */
 
   ctx.strokeStyle="#111";
-  ctx.lineWidth=Math.max(2,width*.008);
+  ctx.lineWidth=Math.max(
+    2,
+    width*.008
+  );
 
   ctx.beginPath();
-  ctx.moveTo(cx-width*.08,top.y+height*.13);
-  ctx.lineTo(cx-width*.03,top.y+height*.21);
-  ctx.lineTo(cx-width*.09,top.y+height*.29);
+
+  ctx.moveTo(
+    cx-width*.08,
+    top.y+height*.13
+  );
+
+  ctx.lineTo(
+    cx-width*.03,
+    top.y+height*.21
+  );
+
+  ctx.lineTo(
+    cx-width*.09,
+    top.y+height*.29
+  );
+
   ctx.stroke();
 
+
   ctx.beginPath();
-  ctx.moveTo(cx+width*.08,top.y+height*.13);
-  ctx.lineTo(cx+width*.03,top.y+height*.21);
-  ctx.lineTo(cx+width*.09,top.y+height*.29);
+
+  ctx.moveTo(
+    cx+width*.08,
+    top.y+height*.13
+  );
+
+  ctx.lineTo(
+    cx+width*.03,
+    top.y+height*.21
+  );
+
+  ctx.lineTo(
+    cx+width*.09,
+    top.y+height*.29
+  );
+
   ctx.stroke();
+
 
   ctx.restore();
 }
 
-/* ---------- ORIGINAL FUNK-STYLE BEAT ---------- */
+
+/* =========================
+   ORIGINAL FUNK-STYLE BEAT
+========================= */
 
 function startFunk(){
 
-  music=true;
+  if(musicStarted) return;
+
+  musicStarted=true;
 
   try{
-    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
 
-    if(audioCtx.state==="suspended"){
-      audioCtx.resume();
-    }
+    audioCtx=
+      new(window.AudioContext||
+      window.webkitAudioContext)();
 
-    funkLoop();
+    audioCtx.resume();
+
+    funkBeat();
+
   }catch(e){}
+
 }
 
-function beat(freq,duration,type="sine",volume=.08){
+
+function sound(
+  frequency,
+  duration,
+  type,
+  volume
+){
 
   if(!audioCtx) return;
 
-  const osc=audioCtx.createOscillator();
-  const gain=audioCtx.createGain();
+  const osc=
+    audioCtx.createOscillator();
+
+  const gain=
+    audioCtx.createGain();
 
   osc.type=type;
-  osc.frequency.value=freq;
 
-  gain.gain.setValueAtTime(volume,audioCtx.currentTime);
+  osc.frequency.value=frequency;
+
+  gain.gain.setValueAtTime(
+    volume,
+    audioCtx.currentTime
+  );
+
   gain.gain.exponentialRampToValueAtTime(
     .001,
     audioCtx.currentTime+duration
@@ -448,120 +694,56 @@ function beat(freq,duration,type="sine",volume=.08){
   gain.connect(audioCtx.destination);
 
   osc.start();
-  osc.stop(audioCtx.currentTime+duration);
+
+  osc.stop(
+    audioCtx.currentTime+duration
+  );
 }
 
-function funkLoop(){
 
-  if(!music) return;
+function funkBeat(){
 
-  beat(65,.12,"sine",.18);
+  if(!musicStarted) return;
 
-  setTimeout(()=>{
-    if(!music)return;
-    beat(140,.08,"square",.035);
-  },130);
+  sound(55,.14,"sine",.20);
 
   setTimeout(()=>{
-    if(!music)return;
-    beat(75,.1,"sine",.13);
-  },260);
+    sound(150,.07,"square",.035);
+  },120);
 
   setTimeout(()=>{
-    if(!music)return;
-    beat(180,.06,"triangle",.035);
-  },390);
+    sound(75,.10,"sine",.14);
+  },250);
 
   setTimeout(()=>{
-    if(!music)return;
-    beat(65,.12,"sine",.18);
-  },520);
+    sound(190,.06,"triangle",.03);
+  },380);
 
   setTimeout(()=>{
-    if(!music)return;
-    beat(110,.08,"square",.035);
+    sound(55,.14,"sine",.20);
+  },500);
+
+  setTimeout(()=>{
+    sound(125,.07,"square",.035);
   },650);
 
-  setTimeout(funkLoop,800);
+  setTimeout(funkBeat,800);
 }
 
-function toggleMusic(){
 
-  if(!music){
-    startFunk();
-  }else{
-    music=false;
-    if(audioCtx){
-      audioCtx.suspend();
-    }
-  }
+/* =========================
+   RESET
+========================= */
+
+function resetApp(){
+
+  location.reload();
+
 }
 
-/* ---------- CAMERA FLIP ---------- */
-
-async function switchCamera(){
-
-  if(stream){
-    stream.getTracks().forEach(t=>t.stop());
-  }
-
-  front=!front;
-
-  try{
-    stream=await navigator.mediaDevices.getUserMedia({
-      video:{
-        facingMode:front ? "user" : "environment",
-        width:{ideal:1280},
-        height:{ideal:720}
-      },
-      audio:false
-    });
-
-    video.srcObject=stream;
-  }catch(e){
-    alert("Camera switch nahi ho paaya.");
-  }
-}
-
-/* ---------- PHOTO ---------- */
-
-function capture(){
-
-  const photo=document.createElement("canvas");
-  photo.width=canvas.width;
-  photo.height=canvas.height;
-
-  const pctx=photo.getContext("2d");
-
-  pctx.save();
-
-  if(front){
-    pctx.translate(photo.width,0);
-    pctx.scale(-1,1);
-  }
-
-  pctx.drawImage(
-    video,
-    0,0,
-    photo.width,
-    photo.height
-  );
-
-  pctx.restore();
-
-  pctx.drawImage(
-    canvas,
-    0,0,
-    photo.width,
-    photo.height
-  );
-
-  const a=document.createElement("a");
-  a.download="confidence-skull.png";
-  a.href=photo.toDataURL("image/png");
-  a.click();
-}
 </script>
 
 </body>
 </html>
+
+Note: Tumhare Spotify link wale exact track ko app mein directly embed nahi kiya hai; Spotify link khud audio file nahi deta. Is code mein us moment par original funk-style beat automatically start hota hai.
