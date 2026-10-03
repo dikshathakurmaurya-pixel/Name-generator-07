@@ -14,7 +14,7 @@
 
 body{
   background:#050505;
-  color:white;
+  color:#fff;
   font-family:Arial,sans-serif;
   min-height:100vh;
   display:flex;
@@ -23,9 +23,9 @@ body{
 }
 
 h1{
-  margin:18px 0 4px;
+  margin:18px 0 5px;
   font-size:30px;
-  letter-spacing:5px;
+  letter-spacing:6px;
 }
 
 #status{
@@ -38,8 +38,7 @@ h1{
   width:94vw;
   max-width:600px;
   height:72vh;
-  max-height:780px;
-  min-height:420px;
+  min-height:430px;
   position:relative;
   overflow:hidden;
   border-radius:24px;
@@ -57,27 +56,27 @@ canvas{
   transform:scaleX(-1);
 }
 
-#canvas{
+canvas{
   display:none;
 }
 
-#reset{
+button{
   margin-top:15px;
-  padding:13px 30px;
+  padding:13px 28px;
   border:0;
   border-radius:30px;
-  background:white;
-  color:black;
+  background:#fff;
+  color:#000;
   font-weight:bold;
   font-size:15px;
 }
 
-#reset:active{
-  transform:scale(.95);
+#save{
+  display:none;
 }
 
 #hint{
-  margin-top:12px;
+  margin-top:10px;
   color:#777;
   font-size:12px;
   text-align:center;
@@ -88,220 +87,259 @@ canvas{
 <body>
 
 <h1>CONFIDENCE</h1>
-<div id="status">Looking for your face...</div>
+
+<div id="status">
+Starting camera...
+</div>
 
 <div class="camera">
-  <video id="video" autoplay playsinline muted></video>
+
+  <video
+    id="video"
+    autoplay
+    playsinline
+    muted>
+  </video>
+
   <canvas id="canvas"></canvas>
+
 </div>
 
 <button id="reset">RESET</button>
+<button id="save">SAVE PHOTO</button>
 
 <div id="hint">
-  Camera ki taraf dekho 👀
+  Camera se thoda side dekho → phir directly camera mein dekho 👀
 </div>
 
-<!-- Face tracking -->
+
+<!-- MediaPipe Face Mesh -->
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
+
 <script>
 
-/* =========================
-   CONFIDENCE APP
-========================= */
+/* =====================================================
+   CONFIDENCE
+   Automatic camera-look detection + frozen skull photo
+===================================================== */
 
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
+
 const statusText = document.getElementById("status");
 const resetBtn = document.getElementById("reset");
+const saveBtn = document.getElementById("save");
 
 let frozen = false;
-let faceReady = false;
-let lastTrigger = 0;
+let triggerLock = false;
 
-/* =========================
-   SKULL IMAGE
-========================= */
+
+/* =====================================================
+   EMBEDDED SKULL PNG
+   ===================================================== */
 
 const skull = new Image();
 
-skull.src =
-"data:image/webp;base64,UklGRvApAABXRUJQVlA4IOQpAACw8QCdASqkAaABPp1Kn0slpCaqJ5LqYUATiU3cLhAbrDP8J2q27/Ff9j6n4x6rj0jVx8mXcXhG7Y8z6dXv4H5n9hJ9x0h8Q2l3H2k2h8Kx9m9l6x6b7l7f9m8h9f8d6g5e5d6b8c7a8b6a8d6e7f6d8f7g6h7j6k5l4m3n2p1q0r9s8t7u6v5w4x3y2z1AA==";
+skull.src = "data:image/png;base64,REPLACE_SKULL_DATA_HERE";
 
-/*
-  Real skull image is loaded below from the embedded
-  compressed image generated for this app.
-*/
 
-skull.onload = () => {
-  statusText.innerText = "Camera ready — look at the camera 👀";
-};
-
-/* =========================
+/* =====================================================
    CAMERA
-========================= */
+===================================================== */
 
 async function startCamera(){
 
   try{
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video:{
-        facingMode:"user",
-        width:{ideal:1280},
-        height:{ideal:720}
-      },
-      audio:false
-    });
+    const stream =
+      await navigator.mediaDevices.getUserMedia({
+
+        video:{
+          facingMode:"user",
+          width:{ideal:1280},
+          height:{ideal:720}
+        },
+
+        audio:false
+
+      });
 
     video.srcObject = stream;
 
     await video.play();
 
     statusText.innerText =
-      "Look away, then look directly at the camera 👀";
+      "Look directly at the camera 👀";
 
-  }catch(error){
+  }
+
+  catch(error){
 
     statusText.innerText =
       "Camera permission required";
 
     alert(
-      "Camera access allow karo.\n\n" +
-      "Agar APK/WebView mein ho to camera permission bhi ON karo."
+      "Camera permission allow karo.\n\n" +
+      "HTTPS ya localhost par app open karo."
     );
+
   }
+
 }
 
-/* =========================
+
+/* =====================================================
    FACE MESH
-========================= */
+===================================================== */
 
 const faceMesh = new FaceMesh({
-  locateFile:(file)=>{
-    return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+
+  locateFile:function(file){
+
+    return
+    `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+
   }
+
 });
+
 
 faceMesh.setOptions({
+
   maxNumFaces:1,
+
   refineLandmarks:true,
-  minDetectionConfidence:.6,
-  minTrackingConfidence:.6
+
+  minDetectionConfidence:0.6,
+
+  minTrackingConfidence:0.6
+
 });
 
-/* =========================
-   FACE RESULT
-========================= */
 
-faceMesh.onResults(results=>{
+/* =====================================================
+   FACE DETECTED
+===================================================== */
+
+faceMesh.onResults(function(results){
 
   if(frozen) return;
 
   if(
     !results.multiFaceLandmarks ||
-    results.multiFaceLandmarks.length===0
+    results.multiFaceLandmarks.length === 0
   ){
 
-    faceReady=false;
-    statusText.innerText="Face not detected";
+    statusText.innerText =
+      "Face not detected";
+
     return;
+
   }
 
-  faceReady=true;
 
-  const lm=results.multiFaceLandmarks[0];
+  const lm =
+    results.multiFaceLandmarks[0];
 
-  /*
-    Eye + iris landmarks.
-    468/473 = iris centers
-  */
-
-  const leftEyeOuter=lm[33];
-  const leftEyeInner=lm[133];
-  const rightEyeInner=lm[362];
-  const rightEyeOuter=lm[263];
-
-  const leftIris=lm[468];
-  const rightIris=lm[473];
-
-  if(!leftIris || !rightIris) return;
-
-  const leftRatio =
-    (leftIris.x-leftEyeOuter.x) /
-    (leftEyeInner.x-leftEyeOuter.x);
-
-  const rightRatio =
-    (rightIris.x-rightEyeInner.x) /
-    (rightEyeOuter.x-rightEyeInner.x);
 
   /*
-    When looking toward camera,
-    iris positions are approximately centered.
+    Nose + face sides
   */
 
-  const leftCenter =
-    leftRatio > .25 && leftRatio < .75;
+  const nose = lm[1];
 
-  const rightCenter =
-    rightRatio > .25 && rightRatio < .75;
+  const leftFace = lm[234];
+
+  const rightFace = lm[454];
+
+
+  const faceCenter =
+    (leftFace.x + rightFace.x) / 2;
+
+
+  const difference =
+    Math.abs(nose.x - faceCenter);
+
 
   /*
-    Also check face orientation.
+    Eye landmarks
   */
 
-  const nose=lm[1];
-  const leftFace=lm[234];
-  const rightFace=lm[454];
+  const leftOuter = lm[33];
+  const leftInner = lm[133];
 
-  const faceCenter=
-    (leftFace.x+rightFace.x)/2;
+  const rightInner = lm[362];
+  const rightOuter = lm[263];
 
-  const noseDifference=
-    Math.abs(nose.x-faceCenter);
 
-  const lookingAtCamera =
-    leftCenter &&
-    rightCenter &&
-    noseDifference < .10;
+  const leftEyeCenter =
+    (leftOuter.x + leftInner.x) / 2;
 
-  if(lookingAtCamera){
+  const rightEyeCenter =
+    (rightInner.x + rightOuter.x) / 2;
 
-    const now=Date.now();
 
-    if(now-lastTrigger>1500){
+  /*
+    Approximate camera-facing check
+  */
 
-      lastTrigger=now;
+  const noseCentered =
+    difference < 0.09;
 
-      freezeAndEdit(lm);
 
-    }
+  const faceFacingCamera =
+    noseCentered;
 
-  }else{
+
+  if(faceFacingCamera && !triggerLock){
+
+    triggerLock = true;
+
+    statusText.innerText =
+      "⚡ CAPTURE!";
+
+    setTimeout(function(){
+
+      freezeAndApplySkull(lm);
+
+    },350);
+
+  }
+
+  else if(!triggerLock){
 
     statusText.innerText =
       "Look directly at the camera 👀";
+
   }
 
 });
 
-/* =========================
-   FREEZE + SKULL EDIT
-========================= */
 
-function freezeAndEdit(lm){
+/* =====================================================
+   FREEZE PHOTO + APPLY SKULL
+===================================================== */
 
-  frozen=true;
+function freezeAndApplySkull(lm){
+
+  frozen = true;
 
   video.pause();
 
-  canvas.width=video.videoWidth;
-  canvas.height=video.videoHeight;
 
   /*
-    Freeze the exact camera frame.
+    Canvas actual camera resolution
+  */
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+
+  /*
+    Freeze camera frame
   */
 
   ctx.save();
@@ -309,126 +347,195 @@ function freezeAndEdit(lm){
   ctx.scale(-1,1);
 
   ctx.drawImage(
+
     video,
+
     -canvas.width,
     0,
     canvas.width,
     canvas.height
+
   );
 
   ctx.restore();
 
-  /*
-    Face coordinates.
-  */
-
-  const top=lm[10];
-  const chin=lm[152];
-  const left=lm[234];
-  const right=lm[454];
-
-  const faceLeft=
-    left.x*canvas.width;
-
-  const faceRight=
-    right.x*canvas.width;
-
-  const faceTop=
-    top.y*canvas.height;
-
-  const faceBottom=
-    chin.y*canvas.height;
-
-  const faceWidth=
-    Math.abs(faceRight-faceLeft);
-
-  const faceHeight=
-    Math.abs(faceBottom-faceTop);
 
   /*
-    Skull size.
+    Face landmarks
   */
 
-  const skullWidth=
-    faceWidth*1.55;
+  const forehead = lm[10];
 
-  const skullHeight=
-    skullWidth;
+  const chin = lm[152];
 
-  const centerX=
-    (faceLeft+faceRight)/2;
+  const left = lm[234];
 
-  const centerY=
-    faceTop+
-    faceHeight*.53;
+  const right = lm[454];
 
-  const x=
-    centerX-skullWidth/2;
 
-  const y=
-    centerY-skullHeight/2;
+  const leftX =
+    left.x * canvas.width;
+
+  const rightX =
+    right.x * canvas.width;
+
+  const topY =
+    forehead.y * canvas.height;
+
+  const bottomY =
+    chin.y * canvas.height;
+
 
   /*
-    Draw skull.
+    Face dimensions
   */
 
-  ctx.drawImage(
-    skull,
-    x,
-    y,
-    skullWidth,
-    skullHeight
-  );
+  const faceWidth =
+    Math.abs(rightX - leftX);
+
+  const faceHeight =
+    Math.abs(bottomY - topY);
+
 
   /*
-    Canvas becomes the frozen photo.
+    Skull dimensions
   */
 
-  canvas.style.display="block";
+  const skullWidth =
+    faceWidth * 1.65;
 
-  statusText.innerText=
-    "⚡ CONFIDENCE — PHOTO FROZEN";
+  const skullHeight =
+    skullWidth *
+    (skull.height / skull.width);
+
+
+  /*
+    Center of face
+  */
+
+  const centerX =
+    (leftX + rightX) / 2;
+
+  const centerY =
+    topY + faceHeight * 0.52;
+
+
+  /*
+    Skull position
+  */
+
+  const x =
+    centerX - skullWidth / 2;
+
+  const y =
+    centerY - skullHeight / 2;
+
+
+  /*
+    Draw skull
+  */
+
+  if(skull.complete){
+
+    ctx.drawImage(
+
+      skull,
+
+      x,
+      y,
+      skullWidth,
+      skullHeight
+
+    );
+
+  }
+
+
+  /*
+    Show frozen image
+  */
+
+  canvas.style.display = "block";
+
+  saveBtn.style.display = "block";
+
+  statusText.innerText =
+    "SKULL EDIT APPLIED ⚡";
 
 }
 
-/* =========================
+
+/* =====================================================
    RESET
-========================= */
+===================================================== */
 
-resetBtn.onclick=()=>{
+resetBtn.onclick = function(){
 
-  frozen=false;
+  frozen = false;
 
-  canvas.style.display="none";
+  triggerLock = false;
+
+  canvas.style.display = "none";
+
+  saveBtn.style.display = "none";
 
   video.play();
 
-  statusText.innerText=
+  statusText.innerText =
     "Look directly at the camera 👀";
+
 };
 
-/* =========================
-   MEDIAPIPE CAMERA
-========================= */
 
-const camera=new Camera(video,{
+/* =====================================================
+   SAVE PHOTO
+===================================================== */
 
-  onFrame:async()=>{
+saveBtn.onclick = function(){
 
-    if(!frozen){
+  const link =
+    document.createElement("a");
 
-      await faceMesh.send({
-        image:video
-      });
+  link.download =
+    "CONFIDENCE_SKULL.png";
 
-    }
+  link.href =
+    canvas.toDataURL("image/png");
 
-  },
+  link.click();
 
-  width:1280,
-  height:720
+};
 
-});
+
+/* =====================================================
+   MEDIAPIPE CAMERA LOOP
+===================================================== */
+
+const camera =
+  new Camera(video,{
+
+    onFrame:async function(){
+
+      if(!frozen){
+
+        await faceMesh.send({
+
+          image:video
+
+        });
+
+      }
+
+    },
+
+    width:1280,
+
+    height:720
+
+  });
+
+
+/* START */
 
 startCamera();
 
