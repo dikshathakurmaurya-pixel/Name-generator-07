@@ -1,62 +1,1239 @@
-<!<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="style.css">
-<title>Pink Font Generator</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#050505">
 
+<title>JUMPX — Jump Counter</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,Helvetica,sans-serif;
+}
+
+body{
+    background:#050505;
+    color:white;
+    min-height:100vh;
+}
+
+header{
+    height:70px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 18px;
+    border-bottom:1px solid #222;
+}
+
+.logo{
+    font-size:26px;
+    font-weight:900;
+    letter-spacing:2px;
+}
+
+.logo span{
+    color:#00ff88;
+}
+
+.status{
+    font-size:11px;
+    font-weight:bold;
+    color:#777;
+}
+
+.container{
+    width:96%;
+    max-width:700px;
+    margin:auto;
+    padding:14px 0 35px;
+}
+
+/* BIG CAMERA */
+
+.camera-box{
+    position:relative;
+    width:100%;
+    height:75vh;
+    min-height:500px;
+    max-height:850px;
+    background:#111;
+    border:1px solid #292929;
+    border-radius:18px;
+    overflow:hidden;
+}
+
+#video{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    transform:scaleX(-1);
+}
+
+#canvas{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    pointer-events:none;
+    transform:scaleX(-1);
+}
+
+.camera-message{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    color:#aaa;
+    font-size:15px;
+    padding:25px;
+    pointer-events:none;
+}
+
+.corner{
+    position:absolute;
+    width:30px;
+    height:30px;
+    border-color:#00ff88;
+    border-style:solid;
+    z-index:5;
+}
+
+.c1{
+    top:15px;
+    left:15px;
+    border-width:2px 0 0 2px;
+}
+
+.c2{
+    top:15px;
+    right:15px;
+    border-width:2px 2px 0 0;
+}
+
+.c3{
+    bottom:15px;
+    left:15px;
+    border-width:0 0 2px 2px;
+}
+
+.c4{
+    bottom:15px;
+    right:15px;
+    border-width:0 2px 2px 0;
+}
+
+/* COUNTER */
+
+.counter{
+    text-align:center;
+    padding:24px 0 14px;
+}
+
+.label{
+    color:#777;
+    font-size:13px;
+    letter-spacing:4px;
+    font-weight:bold;
+}
+
+.number{
+    font-size:90px;
+    line-height:1;
+    font-weight:900;
+}
+
+/* GOAL */
+
+.goal-box{
+    background:#101010;
+    border:1px solid #222;
+    border-radius:14px;
+    padding:15px;
+}
+
+.goal-top{
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:10px;
+    font-size:13px;
+}
+
+.goal-top span:first-child{
+    color:#999;
+}
+
+.progress{
+    height:8px;
+    background:#222;
+    border-radius:20px;
+    overflow:hidden;
+}
+
+.progress-bar{
+    height:100%;
+    width:0%;
+    background:#00ff88;
+    transition:.2s;
+}
+
+/* BUTTONS */
+
+.buttons{
+    display:flex;
+    gap:10px;
+    margin-top:15px;
+}
+
+button{
+    border:0;
+    border-radius:12px;
+    padding:17px;
+    font-size:14px;
+    font-weight:900;
+    cursor:pointer;
+}
+
+.start{
+    flex:1;
+    background:#00ff88;
+    color:#000;
+}
+
+.reset{
+    width:110px;
+    background:#1b1b1b;
+    color:white;
+    border:1px solid #292929;
+}
+
+/* STATS */
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    margin-top:15px;
+}
+
+.stat{
+    background:#101010;
+    border:1px solid #222;
+    border-radius:13px;
+    padding:15px 5px;
+    text-align:center;
+}
+
+.stat-number{
+    font-size:22px;
+    font-weight:900;
+}
+
+.stat-label{
+    color:#777;
+    font-size:10px;
+    margin-top:5px;
+    letter-spacing:1px;
+}
+
+/* INFO */
+
+.info{
+    background:#101010;
+    border:1px solid #222;
+    border-radius:14px;
+    padding:18px;
+    margin-top:15px;
+}
+
+.info h3{
+    font-size:15px;
+    margin-bottom:10px;
+}
+
+.info p{
+    color:#888;
+    font-size:12px;
+    line-height:1.8;
+}
+
+.warning{
+    color:#ffcc00;
+    font-size:11px;
+    margin-top:10px;
+}
+
+/* SMALL SCREEN */
+
+@media(max-width:500px){
+
+    .container{
+        width:98%;
+        padding-top:8px;
+    }
+
+    .camera-box{
+        height:78vh;
+        min-height:480px;
+        border-radius:14px;
+    }
+
+    .number{
+        font-size:75px;
+    }
+
+    .buttons{
+        flex-direction:column;
+    }
+
+    .reset{
+        width:100%;
+    }
+}
+</style>
 </head>
 
 <body>
-<div class="mode-frame">
-    <input type="radio" id="option-1" name="segmented-options" value="1" checked>
-    <label for="option-1">Light</label>
-
-    <input type="radio" id="option-2" name="segmented-options" value="2">
-    <label for="option-2">Dark</label>
-</div>
-
-<div class="container">
 
 <header>
 
     <div class="logo">
-        FONT <span>GENERATOR</span>
+        JUMP<span>X</span>
     </div>
 
-    <div class="subtitle">
-        Create stylish text instantly.
+    <div
+        class="status"
+        id="status">
+        CAMERA OFF
     </div>
 
 </header>
 
+<div class="container">
 
-<textarea
-    id="textInput"
-    placeholder="Type your text here..."
-></textarea>
+    <!-- CAMERA -->
 
+    <div class="camera-box">
 
-<input
-    type="text"
-    id="searchInput"
-    class="search"
-    placeholder="🔍 Search fonts..."
->
+        <video
+            id="video"
+            autoplay
+            muted
+            playsinline>
+        </video>
 
+        <canvas id="canvas"></canvas>
 
-<div id="fontList" class="font-list"></div>
+        <div
+            class="camera-message"
+            id="message">
+            Press START CAMERA
+        </div>
 
+        <div class="corner c1"></div>
+        <div class="corner c2"></div>
+        <div class="corner c3"></div>
+        <div class="corner c4"></div>
 
-<footer>
-    Made with ❤️ • Font Generator
-</footer>
+    </div>
+
+    <!-- COUNTER -->
+
+    <div class="counter">
+
+        <div class="label">
+            JUMPS
+        </div>
+
+        <div
+            class="number"
+            id="count">
+            0
+        </div>
+
+    </div>
+
+    <!-- GOAL -->
+
+    <div class="goal-box">
+
+        <div class="goal-top">
+
+            <span>
+                DAILY GOAL
+            </span>
+
+            <span id="goalText">
+                0 / 50
+            </span>
+
+        </div>
+
+        <div class="progress">
+
+            <div
+                class="progress-bar"
+                id="progress">
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- BUTTONS -->
+
+    <div class="buttons">
+
+        <button
+            class="start"
+            id="startBtn"
+            onclick="startCamera()">
+
+            📷 START CAMERA
+
+        </button>
+
+        <button
+            class="reset"
+            onclick="resetCounter()">
+
+            ↻ RESET
+
+        </button>
+
+    </div>
+
+    <!-- STATS -->
+
+    <div class="stats">
+
+        <div class="stat">
+
+            <div
+                class="stat-number"
+                id="best">
+                0
+            </div>
+
+            <div class="stat-label">
+                BEST
+            </div>
+
+        </div>
+
+        <div class="stat">
+
+            <div
+                class="stat-number"
+                id="today">
+                0
+            </div>
+
+            <div class="stat-label">
+                TODAY
+            </div>
+
+        </div>
+
+        <div class="stat">
+
+            <div class="stat-number">
+                50
+            </div>
+
+            <div class="stat-label">
+                GOAL
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- INFO -->
+
+    <div class="info">
+
+        <h3>
+            HOW TO USE
+        </h3>
+
+        <p>
+
+            1. Phone ko stable jagah par rakho.<br>
+
+            2. Full body camera mein visible rakho.<br>
+
+            3. START CAMERA dabao.<br>
+
+            4. Camera se thoda door khade ho jao.<br>
+
+            5. Jump karna start karo.
+
+        </p>
+
+        <div class="warning">
+
+            ⚠ Camera permission Allow karna zaroori hai.
+
+        </div>
+
+    </div>
 
 </div>
 
 
-<script src="script.js"></script>
+<!-- MEDIAPIPE POSE -->
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+
+<script>
+
+/* =========================
+   ELEMENTS
+========================= */
+
+const video =
+document.getElementById("video");
+
+const canvas =
+document.getElementById("canvas");
+
+const ctx =
+canvas.getContext("2d");
+
+const countElement =
+document.getElementById("count");
+
+const bestElement =
+document.getElementById("best");
+
+const todayElement =
+document.getElementById("today");
+
+const progressElement =
+document.getElementById("progress");
+
+const goalText =
+document.getElementById("goalText");
+
+const statusElement =
+document.getElementById("status");
+
+const messageElement =
+document.getElementById("message");
+
+const startButton =
+document.getElementById("startBtn");
+
+
+/* =========================
+   VARIABLES
+========================= */
+
+const GOAL = 50;
+
+let count = 0;
+
+let best =
+Number(
+    localStorage.getItem("jumpBest")
+) || 0;
+
+let stream = null;
+
+let running = false;
+
+let previousHip = null;
+
+let previousFoot = null;
+
+let jumpState = "ground";
+
+let lastJumpTime = 0;
+
+let history = [];
+
+let calibration = [];
+
+let calibrated = false;
+
+
+/* =========================
+   UI
+========================= */
+
+function updateUI(){
+
+    countElement.textContent =
+        count;
+
+    bestElement.textContent =
+        best;
+
+    todayElement.textContent =
+        count;
+
+    goalText.textContent =
+        count + " / " + GOAL;
+
+    const percentage =
+        Math.min(
+            (count / GOAL) * 100,
+            100
+        );
+
+    progressElement.style.width =
+        percentage + "%";
+}
+
+
+/* =========================
+   RESET
+========================= */
+
+function resetCounter(){
+
+    count = 0;
+
+    previousHip = null;
+
+    previousFoot = null;
+
+    jumpState = "ground";
+
+    history = [];
+
+    calibration = [];
+
+    calibrated = false;
+
+    updateUI();
+}
+
+
+/* =========================
+   ADD JUMP
+========================= */
+
+function addJump(){
+
+    count++;
+
+    if(count > best){
+
+        best = count;
+
+        localStorage.setItem(
+            "jumpBest",
+            best
+        );
+    }
+
+    updateUI();
+
+    /* Small vibration */
+
+    if(
+        navigator.vibrate
+    ){
+
+        navigator.vibrate(50);
+
+    }
+}
+
+
+/* =========================
+   POSE
+========================= */
+
+const pose =
+new Pose({
+
+    locateFile:function(file){
+
+        return
+        "https://cdn.jsdelivr.net/npm/@mediapipe/pose/" + file;
+
+    }
+
+});
+
+
+pose.setOptions({
+
+    modelComplexity:1,
+
+    smoothLandmarks:true,
+
+    enableSegmentation:false,
+
+    minDetectionConfidence:.5,
+
+    minTrackingConfidence:.5
+
+});
+
+
+/* =========================
+   POSE RESULTS
+========================= */
+
+pose.onResults(function(results){
+
+    if(!running)
+        return;
+
+
+    canvas.width =
+        video.videoWidth;
+
+    canvas.height =
+        video.videoHeight;
+
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    if(
+        !results.poseLandmarks
+    ){
+
+        messageElement.textContent =
+            "BODY NOT DETECTED";
+
+        return;
+    }
+
+
+    messageElement.textContent =
+        "BODY DETECTED";
+
+
+    /* Draw skeleton */
+
+    drawConnectors(
+
+        ctx,
+
+        results.poseLandmarks,
+
+        POSE_CONNECTIONS,
+
+        {
+            color:"#00ff88",
+            lineWidth:4
+        }
+
+    );
+
+
+    drawLandmarks(
+
+        ctx,
+
+        results.poseLandmarks,
+
+        {
+            color:"#ffffff",
+            lineWidth:2,
+            radius:4
+        }
+
+    );
+
+
+    /* =========================
+       BODY LANDMARKS
+    ========================= */
+
+    const leftHip =
+        results.poseLandmarks[23];
+
+    const rightHip =
+        results.poseLandmarks[24];
+
+    const leftAnkle =
+        results.poseLandmarks[27];
+
+    const rightAnkle =
+        results.poseLandmarks[28];
+
+
+    if(
+        !leftHip ||
+        !rightHip ||
+        !leftAnkle ||
+        !rightAnkle
+    ){
+
+        return;
+    }
+
+
+    /* Average hip */
+
+    const hipY =
+        (
+            leftHip.y +
+            rightHip.y
+        ) / 2;
+
+
+    /* Average ankle */
+
+    const ankleY =
+        (
+            leftAnkle.y +
+            rightAnkle.y
+        ) / 2;
+
+
+    /* =========================
+       CALIBRATION
+    ========================= */
+
+    if(!calibrated){
+
+        calibration.push({
+            hip:hipY,
+            ankle:ankleY
+        });
+
+
+        if(
+            calibration.length >= 25
+        ){
+
+            calibrated = true;
+
+            messageElement.textContent =
+                "READY — JUMP NOW";
+
+        }
+
+        return;
+    }
+
+
+    /* =========================
+       MOVEMENT
+    ========================= */
+
+    if(previousHip === null){
+
+        previousHip = hipY;
+
+        previousFoot = ankleY;
+
+        return;
+    }
+
+
+    const hipMovement =
+        previousHip - hipY;
+
+
+    const footMovement =
+        previousFoot - ankleY;
+
+
+    previousHip = hipY;
+
+    previousFoot = ankleY;
+
+
+    history.push({
+        hip:hipMovement,
+        foot:footMovement
+    });
+
+
+    if(history.length > 10){
+
+        history.shift();
+
+    }
+
+
+    let hipAverage = 0;
+
+    let footAverage = 0;
+
+
+    for(
+        let i = 0;
+        i < history.length;
+        i++
+    ){
+
+        hipAverage +=
+            history[i].hip;
+
+        footAverage +=
+            history[i].foot;
+
+    }
+
+
+    hipAverage /=
+        history.length;
+
+    footAverage /=
+        history.length;
+
+
+    /*
+       UPWARD MOVEMENT
+    */
+
+    const goingUp =
+        hipAverage > 0.004 ||
+        footAverage > 0.004;
+
+
+    /*
+       DOWNWARD MOVEMENT
+    */
+
+    const goingDown =
+        hipAverage < -0.003 ||
+        footAverage < -0.003;
+
+
+    /* =========================
+       JUMP STATE MACHINE
+    ========================= */
+
+    if(
+        jumpState === "ground" &&
+        goingUp
+    ){
+
+        jumpState =
+            "air";
+
+    }
+
+
+    if(
+        jumpState === "air" &&
+        goingDown
+    ){
+
+        const now =
+            Date.now();
+
+
+        if(
+            now - lastJumpTime > 500
+        ){
+
+            addJump();
+
+            lastJumpTime =
+                now;
+
+        }
+
+
+        jumpState =
+            "ground";
+
+    }
+
+});
+
+
+/* =========================
+   START CAMERA
+========================= */
+
+async function startCamera(){
+
+    if(running){
+
+        stopCamera();
+
+        return;
+    }
+
+
+    if(
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia
+    ){
+
+        alert(
+            "Camera API available nahi hai."
+        );
+
+        return;
+    }
+
+
+    try{
+
+        statusElement.textContent =
+            "REQUESTING CAMERA...";
+
+
+        statusElement.style.color =
+            "#00ff88";
+
+
+        messageElement.textContent =
+            "Allow camera permission";
+
+
+        stream =
+            await navigator.mediaDevices.getUserMedia({
+
+                video:{
+                    facingMode:"user",
+
+                    width:{
+                        ideal:1280
+                    },
+
+                    height:{
+                        ideal:720
+                    }
+                },
+
+                audio:false
+
+            });
+
+
+        video.srcObject =
+            stream;
+
+
+        video.muted =
+            true;
+
+
+        video.playsInline =
+            true;
+
+
+        await video.play();
+
+
+        running =
+            true;
+
+
+        startButton.textContent =
+            "⏹ STOP CAMERA";
+
+
+        statusElement.textContent =
+            "CAMERA ON";
+
+
+        messageElement.textContent =
+            "Calibrating...";
+
+
+        previousHip = null;
+
+        previousFoot = null;
+
+        history = [];
+
+        calibration = [];
+
+        calibrated = false;
+
+
+        processCamera();
+
+
+    }catch(error){
+
+        console.error(error);
+
+
+        statusElement.textContent =
+            "CAMERA ERROR";
+
+
+        statusElement.style.color =
+            "#ff4444";
+
+
+        if(
+            error.name ===
+            "NotAllowedError"
+        ){
+
+            alert(
+                "Camera permission denied. APK settings mein Camera Allow karo."
+            );
+
+        }
+
+        else if(
+            error.name ===
+            "NotReadableError"
+        ){
+
+            alert(
+                "Camera kisi aur app mein use ho raha hai."
+            );
+
+        }
+
+        else{
+
+            alert(
+                "Camera error: " +
+                error.name
+            );
+
+        }
+
+    }
+
+}
+
+
+/* =========================
+   CAMERA PROCESSING
+========================= */
+
+async function processCamera(){
+
+    if(!running)
+        return;
+
+
+    if(
+        video.readyState >= 2
+    ){
+
+        try{
+
+            await pose.send({
+                image:video
+            });
+
+        }catch(error){
+
+            console.log(
+                error
+            );
+
+        }
+
+    }
+
+
+    requestAnimationFrame(
+        processCamera
+    );
+}
+
+
+/* =========================
+   STOP CAMERA
+========================= */
+
+function stopCamera(){
+
+    running =
+        false;
+
+
+    if(stream){
+
+        stream
+        .getTracks()
+        .forEach(
+            track =>
+            track.stop()
+        );
+
+        stream = null;
+
+    }
+
+
+    video.srcObject =
+        null;
+
+
+    startButton.textContent =
+        "📷 START CAMERA";
+
+
+    statusElement.textContent =
+        "CAMERA OFF";
+
+
+    statusElement.style.color =
+        "#777";
+
+
+    messageElement.textContent =
+        "Press START CAMERA";
+
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    previousHip =
+        null;
+
+    previousFoot =
+        null;
+
+    history =
+        [];
+
+    calibration =
+        [];
+
+    calibrated =
+        false;
+
+}
+
+
+/* =========================
+   INITIALIZE
+========================= */
+
+updateUI();
+
+
+window.addEventListener(
+    "beforeunload",
+    stopCamera
+);
+
+</script>
 
 </body>
 </html>
