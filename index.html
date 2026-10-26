@@ -1,545 +1,262 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>CONFIDENCE</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShortSpark - Creator Toolkit</title>
+<meta name="theme-color" content="#ff6b35">
 <style>
-*{
-  box-sizing:border-box;
-  margin:0;
-  padding:0;
-}
-
-body{
-  background:#050505;
-  color:#fff;
-  font-family:Arial,sans-serif;
-  min-height:100vh;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-}
-
-h1{
-  margin:18px 0 5px;
-  font-size:30px;
-  letter-spacing:6px;
-}
-
-#status{
-  color:#aaa;
-  font-size:13px;
-  margin-bottom:12px;
-}
-
-.camera{
-  width:94vw;
-  max-width:600px;
-  height:72vh;
-  min-height:430px;
-  position:relative;
-  overflow:hidden;
-  border-radius:24px;
-  background:#111;
-  border:2px solid #333;
-}
-
-video,
-canvas{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  transform:scaleX(-1);
-}
-
-canvas{
-  display:none;
-}
-
-button{
-  margin-top:15px;
-  padding:13px 28px;
-  border:0;
-  border-radius:30px;
-  background:#fff;
-  color:#000;
-  font-weight:bold;
-  font-size:15px;
-}
-
-#save{
-  display:none;
-}
-
-#hint{
-  margin-top:10px;
-  color:#777;
-  font-size:12px;
-  text-align:center;
-}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#fff8f3;color:#252525}
+header{background:#ff6b35;color:white;padding:25px 18px;text-align:center}
+header h1{margin:0;font-size:32px}
+header p{margin:8px 0 0}
+main{max-width:700px;margin:auto;padding:16px}
+.card{background:white;padding:18px;border-radius:18px;margin:15px 0;box-shadow:0 4px 18px #0000000c}
+label{display:block;font-weight:bold;margin:13px 0 7px}
+input,select,textarea{width:100%;padding:13px;border:1px solid #ddd;border-radius:10px;font-size:16px;background:#fff}
+textarea{min-height:85px;resize:vertical}
+button{border:0;border-radius:10px;padding:12px 15px;font-size:15px;font-weight:bold;cursor:pointer}
+.primary{background:#ff6b35;color:white;width:100%;margin-top:15px}
+.secondary{background:#fff0e8;color:#d64d1c;margin:5px 3px 0 0}
+.result{background:#fff8f3;border-radius:12px;padding:13px;margin-top:12px;overflow-wrap:anywhere}
+.result h3{margin:0 0 9px;color:#e65c2b}
+.item{padding:10px 0;border-bottom:1px solid #eee;line-height:1.5}
+footer{text-align:center;padding:22px;color:#777;font-size:13px}
+nav{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:15px}
+nav button{background:#fff;color:#d64d1c}
+.small{font-size:13px;color:#777}
 </style>
 </head>
-
 <body>
+<header>
+  <h1>⚡ ShortSpark</h1>
+  <p>Your YouTube Shorts Creator Toolkit</p>
+  <nav>
+    <button onclick="go('generator')">Create</button>
+    <button onclick="go('saved')">Saved Ideas</button>
+  </nav>
+</header>
 
-<h1>CONFIDENCE</h1>
+<main>
+<section class="card" id="generator">
+  <h2>🚀 Create Your Short</h2>
+  <label for="topic">Video topic</label>
+  <input id="topic" placeholder="e.g. Minecraft, gaming, facts">
 
-<div id="status">
-Starting camera...
-</div>
+  <label for="niche">Category</label>
+  <select id="niche">
+    <option value="gaming">Gaming</option>
+    <option value="minecraft">Minecraft</option>
+    <option value="facts">Facts</option>
+    <option value="comedy">Comedy</option>
+    <option value="motivation">Motivation</option>
+    <option value="education">Education</option>
+    <option value="general">Other</option>
+  </select>
 
-<div class="camera">
+  <label for="style">Video style</label>
+  <select id="style">
+    <option value="curiosity">Curiosity / Mystery</option>
+    <option value="challenge">Challenge</option>
+    <option value="funny">Funny</option>
+    <option value="dramatic">Dramatic</option>
+  </select>
 
-  <video
-    id="video"
-    autoplay
-    playsinline
-    muted>
-  </video>
+  <button class="primary" onclick="generate()">✨ Generate Ideas</button>
+  <p class="small">Free tools • No API key • Runs in your browser</p>
+  <div id="output"></div>
+</section>
 
-  <canvas id="canvas"></canvas>
+<section class="card" id="saved">
+  <h2>💾 Your Saved Ideas</h2>
+  <p class="small">Ideas are stored in this browser on this device.</p>
+  <div id="savedList"></div>
+  <button class="secondary" onclick="clearSaved()">Clear All</button>
+</section>
+</main>
 
-</div>
-
-<button id="reset">RESET</button>
-<button id="save">SAVE PHOTO</button>
-
-<div id="hint">
-  Camera se thoda side dekho → phir directly camera mein dekho 👀
-</div>
-
-
-<!-- MediaPipe Face Mesh -->
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-
+<footer>⚡ ShortSpark · Made for creators</footer>
 
 <script>
+const $ = id => document.getElementById(id);
 
-/* =====================================================
-   CONFIDENCE
-   Automatic camera-look detection + frozen skull photo
-===================================================== */
-
-const video = document.getElementById("video");
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-
-const statusText = document.getElementById("status");
-const resetBtn = document.getElementById("reset");
-const saveBtn = document.getElementById("save");
-
-let frozen = false;
-let triggerLock = false;
-
-
-/* =====================================================
-   EMBEDDED SKULL PNG
-   ===================================================== */
-
-const skull = new Image();
-
-skull.src = "data:image/png;base64,REPLACE_SKULL_DATA_HERE";
-
-
-/* =====================================================
-   CAMERA
-===================================================== */
-
-async function startCamera(){
-
-  try{
-
-    const stream =
-      await navigator.mediaDevices.getUserMedia({
-
-        video:{
-          facingMode:"user",
-          width:{ideal:1280},
-          height:{ideal:720}
-        },
-
-        audio:false
-
-      });
-
-    video.srcObject = stream;
-
-    await video.play();
-
-    statusText.innerText =
-      "Look directly at the camera 👀";
-
-  }
-
-  catch(error){
-
-    statusText.innerText =
-      "Camera permission required";
-
-    alert(
-      "Camera permission allow karo.\n\n" +
-      "HTTPS ya localhost par app open karo."
-    );
-
-  }
-
+function go(id){
+  $(id).scrollIntoView({behavior:"smooth"});
 }
 
+function makeData(topic, niche, style){
+  const hooks = {
+    curiosity:[
+      `Only real fans know this about ${topic}... 👀`,
+      `Wait! Did you notice this in ${topic}?`,
+      `99% of viewers might miss this ${topic} detail!`
+    ],
+    challenge:[
+      `Can you complete this ${topic} challenge? 🔥`,
+      `I tried the ultimate ${topic} challenge!`,
+      `Think you can beat this ${topic} test?`
+    ],
+    funny:[
+      `When ${topic} goes completely wrong 😂`,
+      `POV: You thought ${topic} would be easy...`,
+      `This ${topic} moment is too funny!`
+    ],
+    dramatic:[
+      `Everything changed in this ${topic} moment...`,
+      `The ending of this ${topic} moment is wild!`,
+      `I wasn't ready for what happened in ${topic}...`
+    ]
+  };
 
-/* =====================================================
-   FACE MESH
-===================================================== */
+  const titles = [
+    `${topic} Challenge 🔥 #shorts`,
+    `You NEED to see this ${topic} moment! 👀`,
+    `${topic}: Expectation vs Reality 😂`,
+    `Can You Guess This ${topic}? 🤔`,
+    `The Ultimate ${topic} Test! ⚡`
+  ];
 
-const faceMesh = new FaceMesh({
+  const tags = {
+    gaming:"#gaming #gamer #shorts #gameplay #viral",
+    minecraft:"#minecraft #minecraftshorts #gaming #shorts",
+    facts:"#facts #amazingfacts #didyouknow #shorts",
+    comedy:"#comedy #funny #relatable #shorts",
+    motivation:"#motivation #mindset #inspiration #shorts",
+    education:"#learning #education #knowledge #shorts",
+    general:"#shorts #youtubeshorts #creator #video"
+  };
 
-  locateFile:function(file){
+  const descriptions = [
+    `Watch till the end! 🔥 What do you think about ${topic}? Comment below!\n\nSubscribe for more videos!\n\n${tags[niche] || tags.general}`,
+    `${topic} fans, this one's for you! 👀\n\nLike, comment and subscribe for more!\n\n${tags[niche] || tags.general}`
+  ];
 
-    return
-    `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+  return {
+    hook: hooks[style] || hooks.curiosity,
+    titles,
+    tags: tags[niche] || tags.general,
+    descriptions
+  };
+}
 
-  }
-
-});
-
-
-faceMesh.setOptions({
-
-  maxNumFaces:1,
-
-  refineLandmarks:true,
-
-  minDetectionConfidence:0.6,
-
-  minTrackingConfidence:0.6
-
-});
-
-
-/* =====================================================
-   FACE DETECTED
-===================================================== */
-
-faceMesh.onResults(function(results){
-
-  if(frozen) return;
-
-  if(
-    !results.multiFaceLandmarks ||
-    results.multiFaceLandmarks.length === 0
-  ){
-
-    statusText.innerText =
-      "Face not detected";
-
+function generate(){
+  const topic = $("topic").value.trim();
+  if(!topic){
+    alert("Pehle apna video topic likho!");
+    $("topic").focus();
     return;
-
   }
 
-
-  const lm =
-    results.multiFaceLandmarks[0];
-
-
-  /*
-    Nose + face sides
-  */
-
-  const nose = lm[1];
-
-  const leftFace = lm[234];
-
-  const rightFace = lm[454];
-
-
-  const faceCenter =
-    (leftFace.x + rightFace.x) / 2;
-
-
-  const difference =
-    Math.abs(nose.x - faceCenter);
-
-
-  /*
-    Eye landmarks
-  */
-
-  const leftOuter = lm[33];
-  const leftInner = lm[133];
-
-  const rightInner = lm[362];
-  const rightOuter = lm[263];
-
-
-  const leftEyeCenter =
-    (leftOuter.x + leftInner.x) / 2;
-
-  const rightEyeCenter =
-    (rightInner.x + rightOuter.x) / 2;
-
-
-  /*
-    Approximate camera-facing check
-  */
-
-  const noseCentered =
-    difference < 0.09;
-
-
-  const faceFacingCamera =
-    noseCentered;
-
-
-  if(faceFacingCamera && !triggerLock){
-
-    triggerLock = true;
-
-    statusText.innerText =
-      "⚡ CAPTURE!";
-
-    setTimeout(function(){
-
-      freezeAndApplySkull(lm);
-
-    },350);
-
-  }
-
-  else if(!triggerLock){
-
-    statusText.innerText =
-      "Look directly at the camera 👀";
-
-  }
-
-});
-
-
-/* =====================================================
-   FREEZE PHOTO + APPLY SKULL
-===================================================== */
-
-function freezeAndApplySkull(lm){
-
-  frozen = true;
-
-  video.pause();
-
-
-  /*
-    Canvas actual camera resolution
-  */
-
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-
-
-  /*
-    Freeze camera frame
-  */
-
-  ctx.save();
-
-  ctx.scale(-1,1);
-
-  ctx.drawImage(
-
-    video,
-
-    -canvas.width,
-    0,
-    canvas.width,
-    canvas.height
-
-  );
-
-  ctx.restore();
-
-
-  /*
-    Face landmarks
-  */
-
-  const forehead = lm[10];
-
-  const chin = lm[152];
-
-  const left = lm[234];
-
-  const right = lm[454];
-
-
-  const leftX =
-    left.x * canvas.width;
-
-  const rightX =
-    right.x * canvas.width;
-
-  const topY =
-    forehead.y * canvas.height;
-
-  const bottomY =
-    chin.y * canvas.height;
-
-
-  /*
-    Face dimensions
-  */
-
-  const faceWidth =
-    Math.abs(rightX - leftX);
-
-  const faceHeight =
-    Math.abs(bottomY - topY);
-
-
-  /*
-    Skull dimensions
-  */
-
-  const skullWidth =
-    faceWidth * 1.65;
-
-  const skullHeight =
-    skullWidth *
-    (skull.height / skull.width);
-
-
-  /*
-    Center of face
-  */
-
-  const centerX =
-    (leftX + rightX) / 2;
-
-  const centerY =
-    topY + faceHeight * 0.52;
-
-
-  /*
-    Skull position
-  */
-
-  const x =
-    centerX - skullWidth / 2;
-
-  const y =
-    centerY - skullHeight / 2;
-
-
-  /*
-    Draw skull
-  */
-
-  if(skull.complete){
-
-    ctx.drawImage(
-
-      skull,
-
-      x,
-      y,
-      skullWidth,
-      skullHeight
-
-    );
-
-  }
-
-
-  /*
-    Show frozen image
-  */
-
-  canvas.style.display = "block";
-
-  saveBtn.style.display = "block";
-
-  statusText.innerText =
-    "SKULL EDIT APPLIED ⚡";
-
+  const data = makeData(topic,$("niche").value,$("style").value);
+  const description = data.descriptions[0];
+  const items = [
+    ["🔥 Hooks",data.hook],
+    ["🎯 Titles",data.titles],
+    ["#️⃣ Hashtags",[data.tags]],
+    ["📝 Description",[description]]
+  ];
+
+  $("output").innerHTML = items.map((group,i)=>`
+    <div class="result">
+      <h3>${group[0]}</h3>
+      ${group[1].map((item,j)=>`
+        <div class="item">
+          ${escapeHTML(item)}
+          <br>
+          <button class="secondary" onclick="copyText(this)" data-copy="${encodeURIComponent(item)}">Copy</button>
+          ${i===0 || i===1 ? `<button class="secondary" onclick="saveIdea('${encodeURIComponent(item)}')">Save Idea</button>`:""}
+        </div>
+      `).join("")}
+    </div>
+  `).join("");
 }
 
+function escapeHTML(str){
+  return String(str).replace(/[&<>"']/g,c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
 
-/* =====================================================
-   RESET
-===================================================== */
+async function copyText(button){
+  const text = decodeURIComponent(button.dataset.copy);
+  try{
+    await navigator.clipboard.writeText(text);
+    button.textContent="Copied ✓";
+  }catch(e){
+    const area=document.createElement("textarea");
+    area.value=text;
+    document.body.appendChild(area);
+    area.select();
+    document.execCommand("copy");
+    area.remove();
+    button.textContent="Copied ✓";
+  }
+  setTimeout(()=>button.textContent="Copy",1200);
+}
 
-resetBtn.onclick = function(){
+function getSaved(){
+  try{return JSON.parse(localStorage.getItem("shortspark_saved")||"[]")}
+  catch(e){return []}
+}
 
-  frozen = false;
+function saveIdea(encoded){
+  const idea=decodeURIComponent(encoded);
+  const saved=getSaved();
+  if(saved.includes(idea)){
+    alert("Ye idea pehle se saved hai!");
+    return;
+  }
+  saved.unshift(idea);
+  localStorage.setItem("shortspark_saved",JSON.stringify(saved));
+  renderSaved();
+  alert("Idea saved! ✅");
+}
 
-  triggerLock = false;
+function renderSaved(){
+  const saved=getSaved();
+  $("savedList").innerHTML=saved.length ? saved.map((idea,i)=>`
+    <div class="result">
+      ${escapeHTML(idea)}
+      <br>
+      <button class="secondary" onclick="copySaved(${i})">Copy</button>
+      <button class="secondary" onclick="deleteSaved(${i})">Delete</button>
+    </div>
+  `).join("") : "<p>No saved ideas yet. Generate and save your first idea!</p>";
+}
 
-  canvas.style.display = "none";
+async function copySaved(i){
+  const text=getSaved()[i];
+  try{
+    await navigator.clipboard.writeText(text);
+    alert("Copied! ✅");
+  }catch(e){
+    const area=document.createElement("textarea");
+    area.value=text;
+    document.body.appendChild(area);
+    area.select();
+    document.execCommand("copy");
+    area.remove();
+    alert("Copied! ✅");
+  }
+}
 
-  saveBtn.style.display = "none";
+function deleteSaved(i){
+  const saved=getSaved();
+  saved.splice(i,1);
+  localStorage.setItem("shortspark_saved",JSON.stringify(saved));
+  renderSaved();
+}
 
-  video.play();
+function clearSaved(){
+  if(confirm("Delete all saved ideas?")){
+    localStorage.removeItem("shortspark_saved");
+    renderSaved();
+  }
+}
 
-  statusText.innerText =
-    "Look directly at the camera 👀";
-
-};
-
-
-/* =====================================================
-   SAVE PHOTO
-===================================================== */
-
-saveBtn.onclick = function(){
-
-  const link =
-    document.createElement("a");
-
-  link.download =
-    "CONFIDENCE_SKULL.png";
-
-  link.href =
-    canvas.toDataURL("image/png");
-
-  link.click();
-
-};
-
-
-/* =====================================================
-   MEDIAPIPE CAMERA LOOP
-===================================================== */
-
-const camera =
-  new Camera(video,{
-
-    onFrame:async function(){
-
-      if(!frozen){
-
-        await faceMesh.send({
-
-          image:video
-
-        });
-
-      }
-
-    },
-
-    width:1280,
-
-    height:720
-
-  });
-
-
-/* START */
-
-startCamera();
-
+renderSaved();
 </script>
-
 </body>
 </html>
